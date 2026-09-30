@@ -1,0 +1,229 @@
+import { useState } from 'react'
+import { Star, Download } from 'lucide-react'
+import { VolunteerLayout } from '../components/VolunteerLayout'
+import {
+  adminTasks,
+  foundations,
+  volunteers,
+  type AdminTaskRow,
+  type FoundationRow,
+} from '../data'
+
+const taskStatusMap: Record<AdminTaskRow['status'], { label: string; cls: string }> = {
+  moderation: { label: 'На модерации', cls: 'badge-yellow' },
+  published: { label: 'Опубликовано', cls: 'badge-green' },
+  rework: { label: 'На доработке', cls: 'badge-red' },
+}
+
+const foundationStatusMap: Record<FoundationRow['status'], { label: string; cls: string }> = {
+  pending: { label: 'На проверке', cls: 'badge-yellow' },
+  approved: { label: 'Одобрено', cls: 'badge-green' },
+  rejected: { label: 'Отклонено', cls: 'badge-red' },
+}
+
+type Tab = 'tasks' | 'foundations' | 'volunteers' | 'stats'
+
+export const AdminPage = () => {
+  const [tab, setTab] = useState<Tab>('tasks')
+  const [tasksState, setTasksState] = useState<AdminTaskRow[]>(adminTasks)
+  const [foundationsState, setFoundationsState] = useState<FoundationRow[]>(foundations)
+
+  const publish = (id: number) =>
+    setTasksState((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'published' } : t)))
+
+  const returnRework = (id: number) =>
+    setTasksState((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'rework' } : t)))
+
+  const decideFoundation = (id: number, status: FoundationRow['status']) =>
+    setFoundationsState((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f)))
+
+  const downloadCsv = () => {
+    const rows = [
+      ['ID', 'Задание', 'Фонд', 'Статус'],
+      ...tasksState.map((t) => [String(t.id), t.title, t.foundation, taskStatusMap[t.status].label]),
+    ]
+    const csv = rows.map((r) => r.join(';')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'otchet_po_zadaniyam.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <VolunteerLayout role="Администратор">
+      <div className="hours-card">
+        <div>
+          <h3>Мои волонтёрские часы</h3>
+          <p>Общее количество начисленных часов</p>
+        </div>
+        <span className="hours-num">
+          48 <Star size={30} fill="currentColor" strokeWidth={0} />
+        </span>
+      </div>
+
+      <div className="admin-card">
+        <h2>Панель администратора</h2>
+
+        <div className="tabs">
+          <button className={`tab ${tab === 'tasks' ? 'active' : ''}`} onClick={() => setTab('tasks')}>
+            Задания
+          </button>
+          <button className={`tab ${tab === 'foundations' ? 'active' : ''}`} onClick={() => setTab('foundations')}>
+            Фонды
+          </button>
+          <button className={`tab ${tab === 'volunteers' ? 'active' : ''}`} onClick={() => setTab('volunteers')}>
+            Волонтёры
+          </button>
+          <button className={`tab ${tab === 'stats' ? 'active' : ''}`} onClick={() => setTab('stats')}>
+            Статистика
+          </button>
+        </div>
+
+        {tab === 'tasks' && (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Задание</th>
+                  <th>Фонд</th>
+                  <th>Статус</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasksState.map((t) => (
+                  <tr key={t.id}>
+                    <td className="id">#{t.id}</td>
+                    <td className="title-cell">{t.title}</td>
+                    <td>{t.foundation}</td>
+                    <td>
+                      <span className={`badge ${taskStatusMap[t.status].cls}`}>
+                        {taskStatusMap[t.status].label}
+                      </span>
+                    </td>
+                    <td>
+                      {t.status === 'moderation' && (
+                        <div className="row-actions">
+                          <button className="mini-btn btn-success" onClick={() => publish(t.id)}>
+                            Опубликовать
+                          </button>
+                          <button className="mini-btn btn-danger" onClick={() => returnRework(t.id)}>
+                            Вернуть на доработку
+                          </button>
+                        </div>
+                      )}
+                      {t.status === 'published' && (
+                        <div className="row-actions">
+                          <button className="mini-btn btn-primary" onClick={downloadCsv}>
+                            Начислить часы
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'foundations' && (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Фонд</th>
+                  <th>ИНН</th>
+                  <th>Статус</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {foundationsState.map((f) => (
+                  <tr key={f.id}>
+                    <td className="id">#{f.id}</td>
+                    <td className="title-cell">{f.name}</td>
+                    <td>{f.inn}</td>
+                    <td>
+                      <span className={`badge ${foundationStatusMap[f.status].cls}`}>
+                        {foundationStatusMap[f.status].label}
+                      </span>
+                    </td>
+                    <td>
+                      {f.status === 'pending' && (
+                        <div className="row-actions">
+                          <button className="mini-btn btn-success" onClick={() => decideFoundation(f.id, 'approved')}>
+                            Одобрить
+                          </button>
+                          <button className="mini-btn btn-danger" onClick={() => decideFoundation(f.id, 'rejected')}>
+                            Отклонить
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'volunteers' && (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Имя</th>
+                  <th>Email</th>
+                  <th>Часы</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {volunteers.map((v) => (
+                  <tr key={v.id}>
+                    <td className="id">#{v.id}</td>
+                    <td className="title-cell">{v.name}</td>
+                    <td>{v.email}</td>
+                    <td>{v.hours}</td>
+                    <td>
+                      <span className={`badge ${v.status === 'active' ? 'badge-green' : 'badge-gray'}`}>
+                        {v.status === 'active' ? 'Активен' : 'Неактивен'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab === 'stats' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {tasksState.map((t) => (
+                <div key={t.id} className="an-card" style={{ flex: 1, minWidth: 200 }}>
+                  <div className="label">#{t.id} {t.title}</div>
+                  <div className="num">{t.foundation}</div>
+                  <span className={`badge ${taskStatusMap[t.status].cls}`}>
+                    {taskStatusMap[t.status].label}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-primary" onClick={downloadCsv}>
+              <Download size={17} />
+              Скачать отчет в Excel/CSV
+            </button>
+          </div>
+        )}
+      </div>
+    </VolunteerLayout>
+  )
+}
