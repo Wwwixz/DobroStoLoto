@@ -16,10 +16,16 @@ public class NotificationService {
 
     @Transactional
     public void notify(User user, String title, String text) {
+        notify(user, title, text, null);
+    }
+
+    @Transactional
+    public void notify(User user, String title, String text, String link) {
         Notification n = new Notification();
         n.user = user;
         n.title = title;
         n.text = text;
+        n.link = link;
         notifications.save(n);
     }
 }

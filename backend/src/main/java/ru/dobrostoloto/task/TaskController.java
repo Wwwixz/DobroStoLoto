@@ -129,7 +129,7 @@ public class TaskController {
         task.createdBy = user;
         tasks.save(task);
         notificationService.notify(user, "Задание на модерации",
-                "Задание «" + task.title + "» отправлено на проверку администратору.");
+                "Задание «" + task.title + "» отправлено на проверку администратору.", "/fund");
 
         return ResponseEntity.ok(TaskDto.from(task, false, 0));
     }
@@ -194,7 +194,8 @@ public class TaskController {
             task.responses = task.responses + 1;
             tasks.save(task);
             notificationService.notify(user, "Отклик отправлен",
-                    "Ваш отклик на задание «" + task.title + "» отправлен организатору. Ожидайте подтверждения.");
+                    "Ваш отклик на задание «" + task.title + "» отправлен организатору. Ожидайте подтверждения.",
+                    "/responses");
         }
         return ResponseEntity.ok(TaskDto.from(task, true, responses.countByTaskIdAndStatus(id, "approved")));
     }

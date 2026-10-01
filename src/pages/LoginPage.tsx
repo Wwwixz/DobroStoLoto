@@ -79,7 +79,9 @@ export const LoginPage = () => {
 
           <div className="auth-links">
             <button>Забыли пароль?</button>
-            <Link to="/registration">Нет аккаунта? Зарегистрироваться</Link>
+            <Link to="/registration">
+              Нет аккаунта? <b>Зарегистрироваться</b>
+            </Link>
           </div>
 
           <p style={{ fontSize: 13, color: 'var(--muted)', margin: '18px 0 0', textAlign: 'center' }}>

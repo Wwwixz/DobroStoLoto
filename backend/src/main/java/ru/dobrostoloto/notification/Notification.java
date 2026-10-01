@@ -27,6 +27,10 @@ public class Notification {
     @Column(nullable = false, length = 1000)
     public String text;
 
+    /** Куда переходить по уведомлению (путь фронтенда), null — просто текстовое уведомление. */
+    @Column(length = 300)
+    public String link;
+
     @Column(nullable = false)
     public boolean read;
 

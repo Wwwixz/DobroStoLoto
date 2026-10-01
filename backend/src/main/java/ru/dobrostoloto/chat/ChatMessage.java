@@ -36,6 +36,9 @@ public class ChatMessage {
     @jakarta.persistence.Column(length = 20)
     public String time;
 
+    /** Прочитано ли сообщение получателем (для счётчика непрочитанных). */
+    public boolean read;
+
     public ChatMessage() {
     }
 

@@ -29,7 +29,7 @@ public class ChatController {
     public record MessageDto(String from, String text, String time) {
     }
 
-    public record ChatDto(Long id, String name, String last, String time, List<MessageDto> messages) {
+    public record ChatDto(Long id, String name, String last, String time, long unread, List<MessageDto> messages) {
     }
 
     public record SendMessageRequest(String text) {
@@ -113,7 +113,8 @@ public class ChatController {
             if (partner != null) {
                 notificationService.notify(partner, "Новый диалог",
                         user.fullName + " открыл переписку по заданию «"
-                                + (req.taskTitle() == null ? "" : req.taskTitle()) + "».");
+                                + (req.taskTitle() == null ? "" : req.taskTitle()) + "».",
+                        "/messages?chat=" + chat.id);
             }
         } else if (chat.partner == null && partner != null) {
             chat.partner = partner;
@@ -152,15 +153,16 @@ public class ChatController {
                     pickSupportReply(chat), LocalTime.now().format(HHMM));
             chat.messages.add(reply);
             notificationService.notify(viewer, "Новое сообщение",
-                    chat.name + ": " + truncate(reply.text));
+                    chat.name + ": " + truncate(reply.text), "/messages?chat=" + chat.id);
         } else if (partnerSide) {
             // Фонд ответил — уведомляем волонтёра
             notificationService.notify(chat.user, "Новое сообщение",
-                    "Фонд «" + chat.name + "»: " + truncate(text));
+                    "Фонд «" + chat.name + "»: " + truncate(text), "/messages?chat=" + chat.id);
         } else if (chat.partner != null) {
             // Волонтёр написал — уведомляем фонд
             notificationService.notify(chat.partner, "Новое сообщение",
-                    "От " + chat.user.fullName + " (диалог «" + chat.name + "»): " + truncate(text));
+                    "От " + chat.user.fullName + " (диалог «" + chat.name + "»): " + truncate(text),
+                    "/messages?chat=" + chat.id);
         }
         chats.save(chat);
         return ResponseEntity.ok(toDto(chat, viewer));
@@ -179,6 +181,25 @@ public class ChatController {
             chat.messages.add(welcome);
             chats.save(chat);
         }
+    }
+
+    /** Отметить все сообщения диалога прочитанными для текущего зрителя. */
+    @PostMapping("/{id}/read")
+    @Transactional
+    public ResponseEntity<Void> markRead(
+            @RequestHeader(value = "X-User-Id", required = false) Long userId,
+            @PathVariable Long id
+    ) {
+        User viewer = currentUser.resolve(userId);
+        Chat chat = chats.findById(id).orElseThrow();
+        if (!isParticipant(chat, viewer)) {
+            throw new IllegalArgumentException("Нет доступа к этому диалогу");
+        }
+        chat.messages.stream()
+                .filter(m -> !m.read && (m.senderId == null || !m.senderId.equals(viewer.id)))
+                .forEach(m -> m.read = true);
+        chats.save(chat);
+        return ResponseEntity.ok().build();
     }
 
     private String pickSupportReply(Chat chat) {
@@ -207,6 +228,9 @@ public class ChatController {
                         m.time
                 ))
                 .toList();
+        long unread = chat.messages.stream()
+                .filter(m -> !m.read && (m.senderId == null || !m.senderId.equals(viewer.id)))
+                .count();
         String last = "";
         String time = "";
         if (!chat.messages.isEmpty()) {
@@ -216,6 +240,6 @@ public class ChatController {
         }
         String title = ownerViewing ? chat.name
                 : (chat.user.fullName == null ? chat.name : chat.user.fullName);
-        return new ChatDto(chat.id, title, last, time, messages);
+        return new ChatDto(chat.id, title, last, time, unread, messages);
     }
 }

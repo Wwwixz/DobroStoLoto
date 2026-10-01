@@ -43,6 +43,8 @@ export interface Chat {
   name: string
   last: string
   time: string
+  /** Сколько непрочитанных сообщений от собеседника (бейдж-кружок на диалоге). */
+  unread?: number
   messages: ChatMessage[]
 }
 

@@ -122,7 +122,8 @@ public class AuthController {
             foundations.save(foundation);
         }
         notificationService.notify(user, "Добро пожаловать!",
-                "Вы зарегистрированы на платформе «Помогать проСТО». Заполните профиль и откликнитесь на первое задание.");
+                "Вы зарегистрированы на платформе «Помогать проСТО». Заполните профиль и откликнитесь на первое задание.",
+                "/profile");
 
         return ResponseEntity.ok(UserDto.from(user));
     }

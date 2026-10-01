@@ -120,10 +120,12 @@ public class FundController {
         if (TaskResponse.STATUS_APPROVED.equals(status)) {
             notificationService.notify(r.user, "Отклик принят",
                     "Фонд подтвердил ваше участие в задании «" + r.task.title
-                            + "». Организационная информация появится в разделе «Мои отклики».");
+                            + "». Организационная информация появится в разделе «Мои отклики».",
+                    "/responses");
         } else {
             notificationService.notify(r.user, "Отклик отклонён",
-                    "К сожалению, фонд отклонил ваш отклик на задание «" + r.task.title + "».");
+                    "К сожалению, фонд отклонил ваш отклик на задание «" + r.task.title + "».",
+                    "/responses");
         }
         return ResponseEntity.ok().build();
     }
@@ -151,7 +153,8 @@ public class FundController {
         r.user.hours += req.hours();
         participations.save(new Participation(r.task, r.user, java.time.LocalDate.now(), req.hours()));
         notificationService.notify(r.user, "Часы начислены",
-                "+" + req.hours() + " волонтёрских часов за задание «" + r.task.title + "». Часы уже в вашем профиле.");
+                "+" + req.hours() + " волонтёрских часов за задание «" + r.task.title + "». Часы уже в вашем профиле.",
+                "/history");
         return ResponseEntity.ok().build();
     }
 
@@ -171,7 +174,8 @@ public class FundController {
                     r.status = TaskResponse.STATUS_COMPLETED;
                     responses.save(r);
                     notificationService.notify(r.user, "Задание завершено",
-                            "Задание «" + task.title + "» завершено. Фонд может подтвердить ваше участие и начислить часы.");
+                            "Задание «" + task.title + "» завершено. Фонд может подтвердить ваше участие и начислить часы.",
+                            "/history");
                 });
         return ResponseEntity.ok().build();
     }

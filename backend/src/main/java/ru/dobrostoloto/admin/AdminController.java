@@ -110,12 +110,14 @@ public class AdminController {
         tasks.save(task);
         if ("published".equals(status) && task.createdBy != null) {
             notificationService.notify(task.createdBy, "Задание опубликовано",
-                    "Ваше задание «" + task.title + "» прошло модерацию и опубликовано на платформе.");
+                    "Ваше задание «" + task.title + "» прошло модерацию и опубликовано на платформе.",
+                    "/tasks/" + task.id);
         }
         if ("rework".equals(status) && task.createdBy != null) {
             notificationService.notify(task.createdBy, "Задание возвращено на доработку",
                     "Задание «" + task.title + "» возвращено на доработку."
-                            + (task.adminComment != null ? " Комментарий администратора: " + task.adminComment : ""));
+                            + (task.adminComment != null ? " Комментарий администратора: " + task.adminComment : ""),
+                    "/fund");
         }
         return new AdminTaskDto(task.id, task.title, task.organizer, task.adminStatus,
                 task.closed, task.proBono, task.responses,
@@ -154,11 +156,13 @@ public class AdminController {
         foundations.save(foundation);
         if ("approved".equals(foundation.status) && foundation.linkedUser != null) {
             notificationService.notify(foundation.linkedUser, "Фонд одобрен",
-                    "Фонд «" + foundation.name + "» прошёл проверку. Теперь можно создавать задания.");
+                    "Фонд «" + foundation.name + "» прошёл проверку. Теперь можно создавать задания.",
+                    "/fund");
         }
         if ("rejected".equals(foundation.status) && foundation.linkedUser != null) {
             notificationService.notify(foundation.linkedUser, "Фонд отклонён",
-                    "К сожалению, фонд «" + foundation.name + "» не прошёл проверку.");
+                    "К сожалению, фонд «" + foundation.name + "» не прошёл проверку.",
+                    "/profile");
         }
         return new FoundationDto(foundation.id, foundation.name, foundation.inn, foundation.status,
                 foundation.city == null ? "" : foundation.city,

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>central-mirror</id>
+            <mirrorOf>central</mirrorOf>
+            <name>Central with timeout</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <blocked>false</blocked>
+        </mirror>
+    </mirrors>
+    <profiles>
+        <profile>
+            <id>wagon-timeouts</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <maven.wagon.http.connection.timeout>600000</maven.wagon.http.connection.timeout>
+                <maven.wagon.http.socket.timeout>600000</maven.wagon.http.socket.timeout>
+                <maven.wagon.http.idle.connection.timeout>600000</maven.wagon.http.idle.connection.timeout>
+                <maven.resolver.transport>wagon</maven.resolver.transport>
+            </properties>
+        </profile>
+    </profiles>
+</settings>

@@ -132,8 +132,8 @@ export const RegistrationPage = () => {
               ))}
             </div>
             <div className="auth-links">
-              <Link to="/login" style={{ color: 'inherit', fontSize: 14, fontWeight: 600 }}>
-                Уже есть аккаунт? Войти
+              <Link to="/login">
+                Уже есть аккаунт? <b>Войти</b>
               </Link>
             </div>
           </>

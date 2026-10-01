@@ -38,10 +38,23 @@ export interface NotificationItem {
   text: string
   read: boolean
   time: string
+  link?: string | null
 }
 
 export function readAllNotifications(): Promise<void> {
   return api<void>('/notifications/read-all', { method: 'POST' })
+}
+
+export function readNotification(id: number): Promise<void> {
+  return api<void>(`/notifications/${id}/read`, { method: 'POST' })
+}
+
+export function deleteNotification(id: number): Promise<void> {
+  return api<void>(`/notifications/${id}`, { method: 'DELETE' })
+}
+
+export function clearNotifications(): Promise<void> {
+  return api<void>('/notifications', { method: 'DELETE' })
 }
 
 export interface AchievementItem {

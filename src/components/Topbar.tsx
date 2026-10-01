@@ -1,12 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bell, ChevronDown, Dot } from 'lucide-react'
-import { readAllNotifications, useApi, type NotificationItem } from '../lib/api'
+import { useNavigate } from 'react-router-dom'
+import {
+  Bell,
+  Building2,
+  ChevronDown,
+  Dot,
+  HeartHandshake,
+  History,
+  LogOut,
+  MessageCircle,
+  ShieldCheck,
+  User,
+  BarChart3,
+} from 'lucide-react'
+import { clearNotifications, deleteNotification, getStoredUser, readAllNotifications, setStoredUser, useApi, type NotificationItem } from '../lib/api'
 
 export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
   const [open, setOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const { data, reload } = useApi<NotificationItem[]>('/notifications')
   const [items, setItems] = useState<NotificationItem[]>([])
   const wrapRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     setItems(data ?? [])
@@ -34,9 +50,15 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
     }
     const onEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        setMenuOpen(false)
+      }
     }
     document.addEventListener('mousedown', onClickOutside)
     document.addEventListener('keydown', onEscape)
@@ -46,10 +68,55 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
     }
   }, [])
 
+  const storedUser = getStoredUser()
+  const appRole = storedUser?.role
+
+  const go = (to: string) => {
+    setMenuOpen(false)
+    navigate(to)
+  }
+
+  const logout = () => {
+    setMenuOpen(false)
+    setStoredUser(null)
+    navigate('/login')
+  }
+
+  const menuItems = [
+    { to: '/profile', label: 'Профиль', icon: User, show: true },
+    { to: '/responses', label: 'Мои отклики', icon: HeartHandshake, show: appRole !== 'ADMIN' && appRole !== 'FOUNDATION' },
+    { to: '/messages', label: 'Сообщения', icon: MessageCircle, show: true },
+    { to: '/history', label: 'История', icon: History, show: appRole !== 'ADMIN' && appRole !== 'FOUNDATION' },
+    { to: '/fund', label: 'Кабинет фонда', icon: Building2, show: appRole === 'FOUNDATION' },
+    { to: '/admin', label: 'Админ', icon: ShieldCheck, show: appRole === 'ADMIN' },
+    { to: '/analytics', label: 'Аналитика', icon: BarChart3, show: appRole === 'ADMIN' },
+  ].filter((item) => item.show)
+
   const markAllRead = async () => {
     try {
       await readAllNotifications()
       setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+    } catch {
+      // молча: уведомления не критичны
+    }
+  }
+
+  // Переход по уведомлению: удаляем его из списка и открываем связанную страницу
+  const openNotification = (n: NotificationItem) => {
+    if (!n.link) return
+    setItems((prev) => prev.filter((i) => i.id !== n.id))
+    deleteNotification(n.id).catch(() => {
+      // молча: уведомления не критичны
+    })
+    setOpen(false)
+    navigate(n.link)
+  }
+
+  // Очистить все уведомления
+  const clearAll = async () => {
+    setItems([])
+    try {
+      await clearNotifications()
     } catch {
       // молча: уведомления не критичны
     }
@@ -67,11 +134,18 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
           <div className="notif-dropdown">
             <div className="notif-head">
               <h3>Уведомления</h3>
-              {unreadCount > 0 && (
-                <button className="notif-mark" onClick={markAllRead}>
-                  Прочитать все
-                </button>
-              )}
+              <div className="notif-actions">
+                {unreadCount > 0 && (
+                  <button className="notif-mark" onClick={markAllRead}>
+                    Прочитать все
+                  </button>
+                )}
+                {items.length > 0 && (
+                  <button className="notif-mark notif-clear" onClick={clearAll}>
+                    Очистить все
+                  </button>
+                )}
+              </div>
             </div>
             <div className="notif-list">
               {items.length === 0 && (
@@ -83,7 +157,12 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
                 </div>
               )}
               {items.map((n) => (
-                <div key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`}>
+                <div
+                  key={n.id}
+                  className={`notif-item ${n.read ? '' : 'unread'} ${n.link ? 'clickable' : ''}`}
+                  onClick={() => openNotification(n)}
+                  role={n.link ? 'button' : undefined}
+                >
                   {!n.read && <Dot className="notif-dot" size={28} strokeWidth={0} fill="currentColor" />}
                   <div>
                     <div className="notif-title">{n.title}</div>
@@ -97,13 +176,36 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
         )}
       </div>
 
-      <div className="user-chip">
-        <span className="avatar">{initials}</span>
-        <span>
-          <span className="user-name">{userName}</span>
-          <span className="user-role" style={{ display: 'block' }}>{role}</span>
-        </span>
-        <ChevronDown size={16} style={{ color: 'var(--muted)' }} />
+      <div className="user-menu-wrap" ref={menuRef}>
+        <button
+          className="user-chip"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Меню пользователя"
+          aria-expanded={menuOpen}
+        >
+          <span className="avatar">{initials}</span>
+          <span>
+            <span className="user-name">{userName}</span>
+            <span className="user-role" style={{ display: 'block' }}>{role}</span>
+          </span>
+          <ChevronDown size={16} className={`chip-chevron ${menuOpen ? 'open' : ''}`} style={{ color: 'var(--muted)' }} />
+        </button>
+
+        {menuOpen && (
+          <div className="user-dropdown">
+            {menuItems.map((item) => (
+              <button key={item.to} className="user-menu-item" onClick={() => go(item.to)}>
+                <item.icon size={17} />
+                {item.label}
+              </button>
+            ))}
+            <div className="user-menu-sep" />
+            <button className="user-menu-item user-menu-logout" onClick={logout}>
+              <LogOut size={17} />
+              Выйти
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )

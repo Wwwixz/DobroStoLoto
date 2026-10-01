@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Send, ChevronLeft, Building2 } from 'lucide-react'
+import { Send, ChevronLeft, Building2, MessageCircle } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import type { Chat } from '../data'
 import { api } from '../lib/api'
 
 export const MessagesPage = () => {
   const [chats, setChats] = useState<Chat[] | null>(null)
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [activeId, setActiveId] = useState<number | null>(() => {
     const chat = searchParams.get('chat')
     return chat ? Number(chat) : null
@@ -29,9 +29,25 @@ export const MessagesPage = () => {
   }, [])
 
   const list = chats ?? []
+  // Выбранным считается только явно открытый чат: без выбора справа — заглушка «Выберите чат».
   const activeIdValue =
-    activeId && list.some((c) => c.id === activeId) ? activeId : list[0]?.id ?? null
+    activeId && list.some((c) => c.id === activeId) ? activeId : null
   const active = list.find((c) => c.id === activeIdValue)
+
+  const openChat = (id: number) => {
+    setActiveId(id)
+    setSearchParams({ chat: String(id) }, { replace: true })
+    // помечаем диалог прочитанным: на сервере и сразу в списке (убираем бейдж)
+    setChats((prev) => (prev ?? []).map((c) => (c.id === id ? { ...c, unread: 0 } : c)))
+    api(`/chats/${id}/read`, { method: 'POST' }).catch(() => {
+      // молча: непрочитанные не критичны
+    })
+  }
+
+  const closeChat = () => {
+    setActiveId(null)
+    setSearchParams({}, { replace: true })
+  }
 
   const send = async () => {
     const value = text.trim()
@@ -72,7 +88,8 @@ export const MessagesPage = () => {
     <VolunteerLayout>
       <h1 className="page-title" style={{ marginBottom: 16 }}>Сообщения</h1>
 
-      <div className="messages-layout">
+      {/* На телефоне (до 860px) показываем либо список диалогов, либо чат — по классу chat-open */}
+      <div className={`messages-layout ${activeIdValue ? 'chat-open' : ''}`}>
         <div className="chats-panel">
           <h2>Диалоги</h2>
           <div className="chat-list">
@@ -80,24 +97,36 @@ export const MessagesPage = () => {
               <div
                 key={chat.id}
                 className={`chat-item ${chat.id === activeIdValue ? 'active' : ''}`}
-                onClick={() => setActiveId(chat.id)}
+                onClick={() => openChat(chat.id)}
               >
                 <div className="chat-avatar"><Building2 size={19} /></div>
                 <div className="chat-item-body">
                   <div className="name">{chat.name}</div>
                   <div className="last">{chat.last}</div>
                 </div>
-                <span className="time">{chat.time}</span>
+                <div className="chat-meta">
+                  <span className="time">{chat.time}</span>
+                  {!!chat.unread && chat.unread > 0 && (
+                    <span className="chat-unread" aria-label={`Непрочитанных: ${chat.unread}`}>
+                      {chat.unread}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         <div className="chat-window">
-          {active && (
+          {active ? (
             <>
               <div className="chat-header">
-                <button className="icon-btn" style={{ width: 34, height: 34 }} onClick={() => window.history.back()}>
+                <button
+                  className="icon-btn"
+                  style={{ width: 34, height: 34 }}
+                  onClick={closeChat}
+                  aria-label="Закрыть чат"
+                >
                   <ChevronLeft size={17} />
                 </button>
                 <div className="chat-avatar" style={{ width: 36, height: 36 }}><Building2 size={17} /></div>
@@ -131,6 +160,12 @@ export const MessagesPage = () => {
                 </button>
               </div>
             </>
+          ) : (
+            <div className="chat-placeholder">
+              <MessageCircle size={36} />
+              <p>Выберите чат</p>
+              <span>Выберите диалог слева, чтобы читать и отправлять сообщения</span>
+            </div>
           )}
         </div>
       </div>
