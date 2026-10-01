@@ -21,11 +21,15 @@ public class Chat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
-    /** Владелец диалога (в демо — волонтёр). */
+    /** Владелец диалога (волонтёр, создавший переписку). */
     @ManyToOne
     public User user;
 
-    /** Собеседник: фонд, портал, администратор. */
+    /** Вторая сторона диалога — фонд (для переписки волонтёр ↔ фонд). Может быть null у техподдержки. */
+    @ManyToOne
+    public User partner;
+
+    /** Собеседник: фонд, техподдержка. */
     @jakarta.persistence.Column(nullable = false)
     public String name;
 

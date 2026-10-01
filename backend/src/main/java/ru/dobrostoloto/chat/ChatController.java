@@ -14,8 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.dobrostoloto.common.CurrentUser;
 import ru.dobrostoloto.notification.NotificationService;
+import ru.dobrostoloto.task.Task;
+import ru.dobrostoloto.task.TaskRepository;
 import ru.dobrostoloto.user.User;
 
+/**
+ * Двусторонние диалоги: волонтёр ↔ фонд и волонтёр ↔ техподдержка.
+ * Диалог видят обе стороны, у каждой сообщение собеседника — «them», своё — «me».
+ */
 @RestController
 @RequestMapping("/api/chats")
 public class ChatController {
@@ -30,7 +36,7 @@ public class ChatController {
     }
 
     /** Создание диалога: с фондом (со страницы задания) или с техподдержкой. */
-    public record CreateChatRequest(String name, String taskTitle) {
+    public record CreateChatRequest(String name, String taskTitle, Long taskId) {
     }
 
     private static final DateTimeFormatter HHMM = DateTimeFormatter.ofPattern("HH:mm");
@@ -43,21 +49,17 @@ public class ChatController {
             "Спасибо за обращение! Рады помочь."
     };
 
-    private static final String[] FUND_REPLIES = {
-            "Здравствуйте! Спасибо за обращение — подскажем все детали участия.",
-            "Мы на связи! Расскажем про место, время и что взять с собой.",
-            "Отличный вопрос! Ответим подробно в течение дня.",
-            "Спасибо, ждём вас на задании!"
-    };
-
     private final ChatRepository chats;
     private final CurrentUser currentUser;
     private final NotificationService notificationService;
+    private final TaskRepository tasks;
 
-    public ChatController(ChatRepository chats, CurrentUser currentUser, NotificationService notificationService) {
+    public ChatController(ChatRepository chats, CurrentUser currentUser,
+                          NotificationService notificationService, TaskRepository tasks) {
         this.chats = chats;
         this.currentUser = currentUser;
         this.notificationService = notificationService;
+        this.tasks = tasks;
     }
 
     @GetMapping
@@ -66,12 +68,12 @@ public class ChatController {
         User user = currentUser.resolve(userId);
         ensureSupportChat(user);
         return chats.findAll().stream()
-                .filter(c -> c.user.id.equals(user.id))
-                .map(ChatController::toDto)
+                .filter(c -> isParticipant(c, user))
+                .map(c -> toDto(c, user))
                 .toList();
     }
 
-    /** Создать (или открыть существующий) диалог с фондом. */
+    /** Создать (или открыть существующий) диалог с фондом по заданию. */
     @PostMapping
     @Transactional
     public ChatDto create(
@@ -83,20 +85,41 @@ public class ChatController {
         if (name.isEmpty()) {
             throw new IllegalArgumentException("Укажите получателя диалога");
         }
+        // Фонд-получатель — автор задания, если диалог открыт со страницы задания
+        User partner = null;
+        if (req.taskId() != null) {
+            Task task = tasks.findById(req.taskId()).orElse(null);
+            if (task != null && task.createdBy != null) {
+                partner = task.createdBy;
+            }
+        }
+
         Chat chat = chats.findByUserIdAndName(user.id, name).orElse(null);
         if (chat == null) {
             chat = new Chat();
             chat.user = user;
             chat.name = name;
+            chat.partner = partner;
             chats.save(chat);
             String greeting = req.taskTitle() == null || req.taskTitle().isBlank()
                     ? "Здравствуйте! Мы на связи и готовы ответить на ваши вопросы."
-                    : "Здравствуйте! Вы откликнулись на задание «" + req.taskTitle()
-                            + "» — расскажем детали участия, пишите.";
-            chat.messages.add(new ChatMessage(chat, ChatMessage.FROM_THEM, greeting, LocalTime.now().format(HHMM)));
+                    : "Здравствуйте! Волонтёр откликнулся на задание «" + req.taskTitle()
+                            + "» — здесь можно обсудить детали участия.";
+            ChatMessage greetingMsg = new ChatMessage(chat, ChatMessage.FROM_THEM, greeting,
+                    LocalTime.now().format(HHMM));
+            greetingMsg.senderId = partner != null ? partner.id : null;
+            chat.messages.add(greetingMsg);
+            chats.save(chat);
+            if (partner != null) {
+                notificationService.notify(partner, "Новый диалог",
+                        user.fullName + " открыл переписку по заданию «"
+                                + (req.taskTitle() == null ? "" : req.taskTitle()) + "».");
+            }
+        } else if (chat.partner == null && partner != null) {
+            chat.partner = partner;
             chats.save(chat);
         }
-        return toDto(chat);
+        return toDto(chat, user);
     }
 
     @PostMapping("/{id}/messages")
@@ -106,25 +129,41 @@ public class ChatController {
             @PathVariable Long id,
             @RequestBody SendMessageRequest req
     ) {
-        User user = currentUser.resolve(userId);
+        User viewer = currentUser.resolve(userId);
         Chat chat = chats.findById(id).orElseThrow();
-        if (!chat.user.id.equals(user.id)) {
-            throw new IllegalArgumentException("Это не ваш диалог");
+        boolean owner = chat.user.id.equals(viewer.id);
+        boolean partnerSide = chat.partner != null && chat.partner.id.equals(viewer.id);
+        if (!owner && !partnerSide) {
+            throw new IllegalArgumentException("Нет доступа к этому диалогу");
         }
         String text = req.text() == null ? "" : req.text().trim();
         if (text.isEmpty()) {
             throw new IllegalArgumentException("Сообщение пустое");
         }
-        chat.messages.add(new ChatMessage(chat, ChatMessage.FROM_ME, text, LocalTime.now().format(HHMM)));
 
-        // Авто-ответ собеседника (фонд или техподдержка), чтобы диалог был живым
-        String reply = pickReply(chat);
-        chat.messages.add(new ChatMessage(chat, ChatMessage.FROM_THEM, reply, LocalTime.now().format(HHMM)));
+        ChatMessage msg = new ChatMessage(chat, owner ? ChatMessage.FROM_ME : ChatMessage.FROM_THEM, text,
+                LocalTime.now().format(HHMM));
+        msg.senderId = viewer.id;
+        chat.messages.add(msg);
+
+        // Живой авто-ответ только у техподдержки; в диалогах фонд ↔ волонтёр отвечают люди
+        if (chat.partner == null && SUPPORT_CHAT.equals(chat.name)) {
+            ChatMessage reply = new ChatMessage(chat, ChatMessage.FROM_THEM,
+                    pickSupportReply(chat), LocalTime.now().format(HHMM));
+            chat.messages.add(reply);
+            notificationService.notify(viewer, "Новое сообщение",
+                    chat.name + ": " + truncate(reply.text));
+        } else if (partnerSide) {
+            // Фонд ответил — уведомляем волонтёра
+            notificationService.notify(chat.user, "Новое сообщение",
+                    "Фонд «" + chat.name + "»: " + truncate(text));
+        } else if (chat.partner != null) {
+            // Волонтёр написал — уведомляем фонд
+            notificationService.notify(chat.partner, "Новое сообщение",
+                    "От " + chat.user.fullName + " (диалог «" + chat.name + "»): " + truncate(text));
+        }
         chats.save(chat);
-        notificationService.notify(user, "Новое сообщение",
-                chat.name + ": " + (reply.length() > 70 ? reply.substring(0, 70) + "…" : reply));
-
-        return ResponseEntity.ok(toDto(chat));
+        return ResponseEntity.ok(toDto(chat, viewer));
     }
 
     /** Диалог с техподдержкой есть у каждого пользователя по умолчанию. */
@@ -134,22 +173,39 @@ public class ChatController {
             chat.user = user;
             chat.name = SUPPORT_CHAT;
             chats.save(chat);
-            chat.messages.add(new ChatMessage(chat, ChatMessage.FROM_THEM,
+            ChatMessage welcome = new ChatMessage(chat, ChatMessage.FROM_THEM,
                     "Добро пожаловать в техподдержку «Помогать проСТО»! Опишите проблему — поможем.",
-                    LocalTime.now().format(HHMM)));
+                    LocalTime.now().format(HHMM));
+            chat.messages.add(welcome);
             chats.save(chat);
         }
     }
 
-    private String pickReply(Chat chat) {
-        String[] pool = SUPPORT_CHAT.equals(chat.name) ? SUPPORT_REPLIES : FUND_REPLIES;
-        int index = (chat.messages.size() / 2) % pool.length;
-        return pool[index];
+    private String pickSupportReply(Chat chat) {
+        int index = (chat.messages.size() / 2) % SUPPORT_REPLIES.length;
+        return SUPPORT_REPLIES[index];
     }
 
-    private static ChatDto toDto(Chat chat) {
+    private static boolean isParticipant(Chat chat, User user) {
+        return chat.user.id.equals(user.id)
+                || (chat.partner != null && chat.partner.id.equals(user.id));
+    }
+
+    private static String truncate(String text) {
+        return text.length() > 70 ? text.substring(0, 70) + "…" : text;
+    }
+
+    /** DTO зависит от того, кто смотрит: название и стороны сообщений — относительно зрителя. */
+    private static ChatDto toDto(Chat chat, User viewer) {
+        boolean ownerViewing = chat.user.id.equals(viewer.id);
         List<MessageDto> messages = chat.messages.stream()
-                .map(m -> new MessageDto(m.from, m.text, m.time))
+                .map(m -> new MessageDto(
+                        // системные (senderId == null) всегда «them»; иначе — сравниваем со зрителем
+                        m.senderId == null ? ChatMessage.FROM_THEM
+                                : (m.senderId.equals(viewer.id) ? ChatMessage.FROM_ME : ChatMessage.FROM_THEM),
+                        m.text,
+                        m.time
+                ))
                 .toList();
         String last = "";
         String time = "";
@@ -158,6 +214,8 @@ public class ChatController {
             last = lastMsg.text.length() > 34 ? lastMsg.text.substring(0, 34) + "…" : lastMsg.text;
             time = lastMsg.time;
         }
-        return new ChatDto(chat.id, chat.name, last, time, messages);
+        String title = ownerViewing ? chat.name
+                : (chat.user.fullName == null ? chat.name : chat.user.fullName);
+        return new ChatDto(chat.id, title, last, time, messages);
     }
 }

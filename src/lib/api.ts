@@ -95,6 +95,13 @@ export interface AdminTaskRow {
   title: string
   foundation: string
   status: AdminTaskStatus
+  closed: boolean
+  proBono: boolean
+  responsesCount: number
+  approvedCount: number
+  deadline: string
+  category: string
+  location: string
 }
 
 export interface FoundationRow {
@@ -102,6 +109,12 @@ export interface FoundationRow {
   name: string
   inn: string
   status: FoundationStatus
+  city: string
+  website: string
+  contactPerson: string
+  contactEmail: string
+  phone: string
+  linkedEmail: string
 }
 
 export interface VolunteerRow {
@@ -110,6 +123,10 @@ export interface VolunteerRow {
   email: string
   hours: number
   status: 'active' | 'inactive'
+  city: string
+  department: string
+  position: string
+  registeredAt: string
 }
 
 const USER_KEY = 'ds_user'

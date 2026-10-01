@@ -49,7 +49,7 @@ export const TaskDetailPage = () => {
     try {
       const chat = await api<Chat>('/chats', {
         method: 'POST',
-        body: JSON.stringify({ name: task.organizer, taskTitle: task.title }),
+        body: JSON.stringify({ name: task.organizer, taskTitle: task.title, taskId: task.id }),
       })
       navigate(`/messages?chat=${chat.id}`)
     } catch (e) {

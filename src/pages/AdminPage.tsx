@@ -210,6 +210,8 @@ export const AdminPage = () => {
                   <th>ID</th>
                   <th>Задание</th>
                   <th>Фонд</th>
+                  <th>Категория / город</th>
+                  <th>Отклики</th>
                   <th>Статус</th>
                   <th>Действия</th>
                 </tr>
@@ -218,8 +220,19 @@ export const AdminPage = () => {
                 {tasks.map((t) => (
                   <tr key={t.id}>
                     <td className="id">#{t.id}</td>
-                    <td className="title-cell">{t.title}</td>
+                    <td className="title-cell">
+                      {t.title}
+                      {t.proBono && <span className="badge badge-green" style={{ marginLeft: 6 }}>Pro Bono</span>}
+                      {t.closed && <span className="badge badge-gray" style={{ marginLeft: 6 }}>Закрыто</span>}
+                      {t.deadline && (
+                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>дедлайн: {t.deadline}</div>
+                      )}
+                    </td>
                     <td>{t.foundation}</td>
+                    <td>{t.category} · {t.location}</td>
+                    <td>
+                      {t.responsesCount} (принято {t.approvedCount})
+                    </td>
                     <td>
                       <span className={`badge ${taskStatusMap[t.status].cls}`}>
                         {taskStatusMap[t.status].label}
@@ -289,6 +302,8 @@ export const AdminPage = () => {
                   <th>ID</th>
                   <th>Фонд</th>
                   <th>ИНН</th>
+                  <th>Город / сайт</th>
+                  <th>Контакты</th>
                   <th>Статус</th>
                   <th>Действия</th>
                 </tr>
@@ -297,8 +312,22 @@ export const AdminPage = () => {
                 {foundations.map((f) => (
                   <tr key={f.id}>
                     <td className="id">#{f.id}</td>
-                    <td className="title-cell">{f.name}</td>
+                    <td className="title-cell">
+                      {f.name}
+                      {f.linkedEmail && (
+                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>аккаунт: {f.linkedEmail}</div>
+                      )}
+                    </td>
                     <td>{f.inn}</td>
+                    <td>
+                      {f.city || '—'}
+                      {f.website && <div style={{ fontSize: 12 }}>{f.website}</div>}
+                    </td>
+                    <td>
+                      {f.contactPerson || '—'}
+                      {f.contactEmail && <div style={{ fontSize: 12 }}>{f.contactEmail}</div>}
+                      {f.phone && <div style={{ fontSize: 12 }}>{f.phone}</div>}
+                    </td>
                     <td>
                       <span className={`badge ${foundationStatusMap[f.status].cls}`}>
                         {foundationStatusMap[f.status].label}
@@ -332,7 +361,10 @@ export const AdminPage = () => {
                   <th>ID</th>
                   <th>Имя</th>
                   <th>Email</th>
+                  <th>Город</th>
+                  <th>Подразделение / должность</th>
                   <th>Часы</th>
+                  <th>Регистрация</th>
                   <th>Статус</th>
                 </tr>
               </thead>
@@ -342,7 +374,10 @@ export const AdminPage = () => {
                     <td className="id">#{v.id}</td>
                     <td className="title-cell">{v.name}</td>
                     <td>{v.email}</td>
+                    <td>{v.city || '—'}</td>
+                    <td>{v.department ? `${v.department} · ${v.position || '—'}` : '—'}</td>
                     <td>{v.hours}</td>
+                    <td>{v.registeredAt}</td>
                     <td>
                       <span className={`badge ${v.status === 'active' ? 'badge-green' : 'badge-gray'}`}>
                         {v.status === 'active' ? 'Активен' : 'Неактивен'}

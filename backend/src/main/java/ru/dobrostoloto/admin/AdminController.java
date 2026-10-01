@@ -27,13 +27,18 @@ import ru.dobrostoloto.user.UserRepository;
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    public record AdminTaskDto(Long id, String title, String foundation, String status) {
+    public record AdminTaskDto(Long id, String title, String foundation, String status,
+                               boolean closed, boolean proBono, int responsesCount, int approvedCount,
+                               String deadline, String category, String location) {
     }
 
-    public record FoundationDto(Long id, String name, String inn, String status) {
+    public record FoundationDto(Long id, String name, String inn, String status,
+                                String city, String website, String contactPerson, String contactEmail,
+                                String phone, String linkedEmail) {
     }
 
-    public record VolunteerDto(Long id, String name, String email, int hours, String status) {
+    public record VolunteerDto(Long id, String name, String email, int hours, String status,
+                               String city, String department, String position, String registeredAt) {
     }
 
     public record StatusRequest(String status) {
@@ -82,7 +87,13 @@ public class AdminController {
     @Transactional(readOnly = true)
     public List<AdminTaskDto> tasks() {
         return tasks.findAll().stream()
-                .map(t -> new AdminTaskDto(t.id, t.title, t.organizer, t.adminStatus))
+                .map(t -> new AdminTaskDto(
+                        t.id, t.title, t.organizer, t.adminStatus,
+                        t.closed, t.proBono, t.responses,
+                        (int) taskResponses.countByTaskIdAndStatus(t.id, "approved"),
+                        t.deadline == null ? "" : t.deadline.toString(),
+                        t.category, t.location
+                ))
                 .toList();
     }
 
@@ -106,7 +117,11 @@ public class AdminController {
                     "Задание «" + task.title + "» возвращено на доработку."
                             + (task.adminComment != null ? " Комментарий администратора: " + task.adminComment : ""));
         }
-        return new AdminTaskDto(task.id, task.title, task.organizer, task.adminStatus);
+        return new AdminTaskDto(task.id, task.title, task.organizer, task.adminStatus,
+                task.closed, task.proBono, task.responses,
+                (int) taskResponses.countByTaskIdAndStatus(task.id, "approved"),
+                task.deadline == null ? "" : task.deadline.toString(),
+                task.category, task.location);
     }
 
     // ---- Фонды ----
@@ -115,7 +130,15 @@ public class AdminController {
     @Transactional(readOnly = true)
     public List<FoundationDto> foundations() {
         return foundations.findAll().stream()
-                .map(f -> new FoundationDto(f.id, f.name, f.inn, f.status))
+                .map(f -> new FoundationDto(
+                        f.id, f.name, f.inn, f.status,
+                        f.city == null ? "" : f.city,
+                        f.website == null ? "" : f.website,
+                        f.contactPerson == null ? "" : f.contactPerson,
+                        f.contactEmail == null ? "" : f.contactEmail,
+                        f.phone == null ? "" : f.phone,
+                        f.linkedUser == null ? "" : f.linkedUser.email
+                ))
                 .toList();
     }
 
@@ -129,7 +152,21 @@ public class AdminController {
         }
         foundation.status = status;
         foundations.save(foundation);
-        return new FoundationDto(foundation.id, foundation.name, foundation.inn, foundation.status);
+        if ("approved".equals(foundation.status) && foundation.linkedUser != null) {
+            notificationService.notify(foundation.linkedUser, "Фонд одобрен",
+                    "Фонд «" + foundation.name + "» прошёл проверку. Теперь можно создавать задания.");
+        }
+        if ("rejected".equals(foundation.status) && foundation.linkedUser != null) {
+            notificationService.notify(foundation.linkedUser, "Фонд отклонён",
+                    "К сожалению, фонд «" + foundation.name + "» не прошёл проверку.");
+        }
+        return new FoundationDto(foundation.id, foundation.name, foundation.inn, foundation.status,
+                foundation.city == null ? "" : foundation.city,
+                foundation.website == null ? "" : foundation.website,
+                foundation.contactPerson == null ? "" : foundation.contactPerson,
+                foundation.contactEmail == null ? "" : foundation.contactEmail,
+                foundation.phone == null ? "" : foundation.phone,
+                foundation.linkedUser == null ? "" : foundation.linkedUser.email);
     }
 
     /** Добавление фонда администратором: заявка сразу попадает на проверку. */
@@ -156,7 +193,8 @@ public class AdminController {
         }
         Foundation foundation = new Foundation(name, inn, "pending");
         foundations.save(foundation);
-        return new FoundationDto(foundation.id, foundation.name, foundation.inn, foundation.status);
+        return new FoundationDto(foundation.id, foundation.name, foundation.inn, foundation.status,
+                "", "", "", "", "", "");
     }
 
     // ---- Волонтёры ----
@@ -166,7 +204,13 @@ public class AdminController {
     public List<VolunteerDto> volunteers() {
         return users.findAll().stream()
                 .filter(u -> User.ROLE_VOLUNTEER.equals(u.role))
-                .map(u -> new VolunteerDto(u.id, u.fullName, u.email, u.hours, u.active ? "active" : "inactive"))
+                .map(u -> new VolunteerDto(
+                        u.id, u.fullName, u.email, u.hours, u.active ? "active" : "inactive",
+                        u.city == null ? "" : u.city,
+                        u.department == null ? "" : u.department,
+                        u.position == null ? "" : u.position,
+                        u.registeredAt.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                ))
                 .toList();
     }
 

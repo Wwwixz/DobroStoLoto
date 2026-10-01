@@ -26,6 +26,9 @@ public class ChatMessage {
     @jakarta.persistence.Column(name = "msg_from", length = 10)
     public String from;
 
+    /** Кто реально отправил сообщение (id пользователя). null — системное/авто-сообщение. */
+    public Long senderId;
+
     @jakarta.persistence.Column(length = 2000)
     public String text;
 
