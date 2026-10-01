@@ -43,9 +43,27 @@ export const LandingPage = () => (
             </div>
           </div>
           <div className="hero-visual">
-            <div className="hero-blob" />
-            <div className="hero-blob-sm" />
-            <div className="hero-heart">🤍</div>
+            <svg viewBox="0 0 320 320" className="hero-heart-svg" aria-hidden="true">
+              <path
+                d="M160 68C182-2 300 4 300 96c0 82-90 132-140 168C110 228 20 178 20 96 20 4 138-2 160 68Z"
+                fill="none"
+                stroke="#FFE9B8"
+                strokeWidth="2"
+                transform="rotate(-6 160 160) translate(14 -10)"
+              />
+              <path
+                d="M160 84C179 24 282 30 282 110c0 74-82 119-122 151-40-32-122-77-122-151 0-80 103-86 122-26Z"
+                fill="var(--primary)"
+                fillRule="evenodd"
+              />
+              <path
+                d="M160 132c9-22 46-20 46 10 0 27-30 43-46 55-16-12-46-28-46-55 0-30 37-32 46-10Z"
+                fill="#FFFDF7"
+              />
+            </svg>
+            <span className="hero-tagline">
+              Вместе мы можем<br />больше <Heart size={16} fill="currentColor" strokeWidth={0} />
+            </span>
           </div>
         </div>
 
@@ -95,7 +113,7 @@ export const LandingPage = () => (
           <div>
             <h3 style={{ fontSize: 20 }}>Вместе мы можем больше</h3>
           </div>
-          <span className="heart">🤍</span>
+          <span className="heart"><Heart size={30} fill="currentColor" strokeWidth={0} /></span>
         </div>
       </div>
     </section>

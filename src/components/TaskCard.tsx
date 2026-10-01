@@ -1,12 +1,11 @@
 import { Calendar, MapPin, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Task } from '../data'
+import { TaskPhoto } from '../lib/taskVisuals'
 
 export const TaskCard = ({ task, responded = false }: { task: Task; responded?: boolean }) => (
   <article className="task-card">
-    <div className="task-photo" style={{ background: task.gradient }}>
-      {task.emoji}
-    </div>
+    <TaskPhoto taskId={task.id} gradient={task.gradient} size={32} className="task-photo" />
     <div className="task-body">
       <h3 className="task-title">
         <Link to={`/tasks/${task.id}`}>{task.title}</Link>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, ChevronLeft } from 'lucide-react'
+import { Send, ChevronLeft, Building2 } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import { chats as initialChats, type Chat } from '../data'
 
@@ -37,7 +37,7 @@ export const MessagesPage = () => {
                 className={`chat-item ${chat.id === activeId ? 'active' : ''}`}
                 onClick={() => setActiveId(chat.id)}
               >
-                <div className="chat-avatar">🏛️</div>
+                <div className="chat-avatar"><Building2 size={19} /></div>
                 <div className="chat-item-body">
                   <div className="name">{chat.name}</div>
                   <div className="last">{chat.last}</div>
@@ -53,7 +53,7 @@ export const MessagesPage = () => {
             <button className="icon-btn" style={{ width: 34, height: 34 }} onClick={() => window.history.back()}>
               <ChevronLeft size={17} />
             </button>
-            <div className="chat-avatar" style={{ width: 36, height: 36, fontSize: 16 }}>🏛️</div>
+            <div className="chat-avatar" style={{ width: 36, height: 36 }}><Building2 size={17} /></div>
             <div>
               <h3>{active?.name}</h3>
             </div>

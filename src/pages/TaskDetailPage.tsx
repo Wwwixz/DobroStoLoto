@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, MapPin, CheckCircle2 } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import { tasks } from '../data'
+import { TaskPhoto } from '../lib/taskVisuals'
 
 export const TaskDetailPage = () => {
   const { id } = useParams()
@@ -62,9 +63,7 @@ export const TaskDetailPage = () => {
         </div>
 
         <aside className="detail-aside">
-          <div className="detail-photo" style={{ background: task.gradient }}>
-            {task.emoji}
-          </div>
+          <TaskPhoto taskId={task.id} gradient={task.gradient} size={56} className="detail-photo" />
           <div className="detail-aside-body">
             <div className="slots-line">{task.slots} волонтёров</div>
             <div className="slots-sub">уже откликнулись</div>

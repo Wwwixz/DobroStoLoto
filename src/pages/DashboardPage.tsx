@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
+import { Users2, Heart } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import { tasks } from '../data'
+import { TaskPhoto } from '../lib/taskVisuals'
 
 export const DashboardPage = () => (
   <VolunteerLayout>
@@ -10,8 +12,11 @@ export const DashboardPage = () => (
     </div>
 
     <div className="banner">
-      <h2>Вместе мы делаем мир <br />добрее 🤍</h2>
-      <span className="banner-emoji">🐾</span>
+      <h2>Вместе мы делаем мир <br />добрее</h2>
+      <div className="banner-icons" aria-hidden="true">
+        <span className="banner-icon banner-icon-back"><Users2 size={22} /></span>
+        <span className="banner-icon banner-icon-front"><Heart size={22} fill="currentColor" strokeWidth={0} /></span>
+      </div>
     </div>
 
     <div className="section-head">
@@ -22,9 +27,7 @@ export const DashboardPage = () => (
     <div className="popular-grid">
       {tasks.slice(0, 3).map((task) => (
         <Link to={`/tasks/${task.id}`} key={task.id} className="pop-card" style={{ color: 'inherit' }}>
-          <div className="pop-photo" style={{ background: task.gradient }}>
-            {task.emoji}
-          </div>
+          <TaskPhoto taskId={task.id} gradient={task.gradient} size={30} className="pop-photo" />
           <div className="pop-body">
             <h3>{task.title}</h3>
             <p>{task.location} • {task.dateFrom} — {task.dateTo}</p>

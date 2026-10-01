@@ -1,5 +1,6 @@
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import { myResponses, tasks } from '../data'
+import { TaskPhoto } from '../lib/taskVisuals'
 
 const statusMap = {
   pending: { label: 'На рассмотрении', cls: 'badge-yellow' },
@@ -18,9 +19,7 @@ export const MyResponsesPage = () => (
         const status = statusMap[r.status]
         return (
           <div className="response-card" key={r.taskId}>
-            <div className="response-emoji" style={{ background: task?.gradient }}>
-              {task?.emoji}
-            </div>
+            <TaskPhoto taskId={r.taskId} gradient={task?.gradient ?? '#FFE9B8'} size={22} className="response-emoji" />
             <div>
               <h3>{r.taskTitle}</h3>
               <div className="f">{r.foundation}</div>

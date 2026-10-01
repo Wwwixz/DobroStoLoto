@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Star, PawPrint, Baby } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 
 const info = [
@@ -10,9 +11,9 @@ const info = [
 ]
 
 const achievements = [
-  { emoji: '⭐', bg: '#FFF1C9', title: 'Активный участник', desc: 'Выполнено 5 и более заданий' },
-  { emoji: '🐾', bg: '#E3EDFF', title: 'Помощь животным', desc: 'Участие в задании по категории «Животные»' },
-  { emoji: '🧸', bg: '#FDE8EE', title: 'Забота о детях', desc: 'Участие в задании по категории «Дети»' },
+  { icon: Star, bg: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)', title: 'Активный участник', desc: 'Выполнено 5 и более заданий' },
+  { icon: PawPrint, bg: 'linear-gradient(135deg, #2563EB 0%, #06B6D4 100%)', title: 'Помощь животным', desc: 'Участие в задании по категории «Животные»' },
+  { icon: Baby, bg: 'linear-gradient(135deg, #EC4899 0%, #F97316 100%)', title: 'Забота о детях', desc: 'Участие в задании по категории «Дети»' },
 ]
 
 export const ProfilePage = () => {
@@ -50,7 +51,9 @@ export const ProfilePage = () => {
         <div className="achievements">
           {achievements.map((a) => (
             <div className="ach-item" key={a.title}>
-              <span className="ach-icon" style={{ background: a.bg }}>{a.emoji}</span>
+              <span className="ach-icon" style={{ background: a.bg, color: '#fff' }}>
+                <a.icon size={20} fill={a.icon === Star ? 'currentColor' : 'none'} strokeWidth={a.icon === Star ? 0 : 2} />
+              </span>
               <div>
                 <h3>{a.title}</h3>
                 <p>{a.desc}</p>
