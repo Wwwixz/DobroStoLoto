@@ -60,6 +60,7 @@ npm run dev
 | POST | `/api/auth/register` | регистрация (роль, имя, email, пароль) |
 | POST | `/api/auth/login` | вход по email/телефону |
 | GET | `/api/tasks` | список заданий (фильтры q, category, format, duration) |
+| POST | `/api/tasks` | создать задание (фонд или администратор) |
 | GET | `/api/tasks/{id}` | задание + флаг `responded` текущего пользователя |
 | POST / DELETE | `/api/tasks/{id}/respond` | откликнуться / отменить отклик |
 | GET | `/api/responses` | мои отклики |
@@ -69,8 +70,20 @@ npm run dev
 | GET | `/api/analytics` | статистика, график по месяцам, категории |
 | GET | `/api/profile` | профиль текущего пользователя |
 | GET | `/api/admin/tasks` · POST `/api/admin/tasks/{id}/status` | модерация заданий |
-| GET | `/api/admin/foundations` · POST `/api/admin/foundations/{id}/status` | модерация фондов |
+| GET | `/api/admin/foundations` · POST `/api/admin/foundations` · POST `/api/admin/foundations/{id}/status` | фонды: список, добавление, модерация |
 | GET | `/api/admin/volunteers` | список волонтёров |
+| GET | `/api/admin/admins` · POST `/api/admin/admins` | список админов / создание админа (только главный администратор) |
+
+| GET | `/api/employees/lookup` | поиск сотрудника в замоканной базе (по корп. почте или ID) |
+| GET | `/api/notifications` · POST `/api/notifications/read-all` | уведомления |
+| GET | `/api/chats` · POST `/api/chats` · POST `/api/chats/{id}/messages` | диалоги: техподдержка и фонды |
+| GET | `/api/profile/achievements` | достижения по правилам (не случайные) |
+
+Регистрация волонтёров — по корпоративной почте или табельному ID: данные
+(ФИО, город, подразделение, должность) подтягиваются из замоканной базы
+сотрудников Столото (см. `EmployeeDirectory`). Фонды регистрируются со своим
+ИНН. Регистрация администраторов закрыта — их создаёт главный администратор
+(`admin@dobro.ru`) на вкладке «Администраторы» в панели `/admin`.
 
 Текущий пользователь передаётся заголовком `X-User-Id` (демо-сессия в localStorage).
 Пароли хранятся как BCrypt-хэши. База — H2 в памяти, данные сеются заново при каждом

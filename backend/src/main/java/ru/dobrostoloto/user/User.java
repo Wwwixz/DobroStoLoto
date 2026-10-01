@@ -46,6 +46,15 @@ public class User {
     @Column(nullable = false)
     public boolean active = true;
 
+    /** Главный администратор: единственный, кто может создавать других админов. */
+    @Column(nullable = false)
+    public boolean superAdmin = false;
+
+    /** Подразделение и должность — подтягиваются из базы сотрудников при регистрации. */
+    public String department;
+
+    public String position;
+
     public User() {
     }
 

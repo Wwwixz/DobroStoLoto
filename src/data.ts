@@ -4,7 +4,7 @@ export interface Task {
   description: string
   duties: string[]
   format: 'online' | 'offline'
-  duration: 'one' | 'regular'
+  duration: 'one' | 'regular' | 'longterm'
   category: string
   location: string
   dateFrom: string
@@ -16,120 +16,21 @@ export interface Task {
   organizer: string
   /** заполнено бэкендом: откликнулся ли текущий пользователь */
   responded?: boolean
+  // расширение по ТЗ
+  proBono: boolean
+  skills: string[]
+  deadline: string | null
+  timeFrom: string | null
+  timeTo: string | null
+  place: string | null
+  onlineLink: string | null
+  contact: string | null
+  completionTerms: string | null
+  expectedResult: string | null
+  closed: boolean
+  adminComment: string | null
+  approvedCount: number
 }
-
-export const tasks: Task[] = [
-  {
-    id: 1,
-    title: 'Помощь приюту для животных',
-    description:
-      'Приглашаем волонтёров помочь в приюте для животных. Ваша помощь очень нужна: прогулки с собаками, уход за животными, уборка территории.',
-    duties: [
-      'Привести с собой хорошее настроение',
-      'Пройти с собачками',
-      'Помочь с уборкой вольеров',
-    ],
-    format: 'offline',
-    duration: 'one',
-    category: 'Животные',
-    location: 'Москва',
-    dateFrom: '12 мая',
-    dateTo: '18 мая',
-    slots: 20,
-    responses: 14,
-    emoji: '🐕',
-    gradient: 'linear-gradient(135deg, #FFE9B8 0%, #FFD66B 100%)',
-    organizer: 'Фонд «Добрые лапы»',
-  },
-  {
-    id: 2,
-    title: 'Сбор гуманитарной помощи',
-    description:
-      'Нужна помощь в сборе и сортировке гуманитарной помощи для семей в трудной ситуации. Работа на складе, по желанию — разгрузка машин.',
-    duties: [
-      'Сортировка собранных вещей',
-      'Упаковка наборов',
-      'Работа в команде с координатором',
-    ],
-    format: 'offline',
-    duration: 'regular',
-    category: 'Соц. помощь',
-    location: 'Зеленоград',
-    dateFrom: '15 мая',
-    dateTo: '22 мая',
-    slots: 10,
-    responses: 6,
-    emoji: '📦',
-    gradient: 'linear-gradient(135deg, #E3ECFF 0%, #B8CCF5 100%)',
-    organizer: 'Фонд «Весть»',
-  },
-  {
-    id: 3,
-    title: 'Онлайн-консультации для детей',
-    description:
-      'Бесплатные онлайн-консультации для детей из малообеспеченных семей. Нужны волонтёры-наставники для поддержки в учёбе и развитии.',
-    duties: [
-      'Проводить занятия 2 раза в неделю',
-      'Коммуникабельность и терпение',
-      'Удобное рабочее место с камерой',
-    ],
-    format: 'online',
-    duration: 'regular',
-    category: 'Дети',
-    location: 'Онлайн',
-    dateFrom: '14 мая',
-    dateTo: '16 мая',
-    slots: 15,
-    responses: 8,
-    emoji: '💻',
-    gradient: 'linear-gradient(135deg, #DFF7E7 0%, #B5EAC4 100%)',
-    organizer: 'Дельта с друзьями',
-  },
-  {
-    id: 4,
-    title: 'Экологическая акция «Чистый парк»',
-    description:
-      'Убираем мусор в городских парках и лесах. Нужны активные волонтёры: пакеты, перчатки и хорошее настроение мы предоставим.',
-    duties: [
-      'Принести удобную одежду',
-      'Работать в команде от 2 часов',
-      'Следовать инструкциям координатора',
-    ],
-    format: 'offline',
-    duration: 'one',
-    category: 'Экология',
-    location: 'Санкт-Петербург',
-    dateFrom: '20 мая',
-    dateTo: '30 мая',
-    slots: 30,
-    responses: 12,
-    emoji: '🌿',
-    gradient: 'linear-gradient(135deg, #E5F7E0 0%, #C4E9B5 100%)',
-    organizer: 'Зелёный мир',
-  },
-  {
-    id: 5,
-    title: 'Поддержка пожилых людей',
-    description:
-      'Позвоните, навестите или просто пообщайтесь с пожилыми людьми, которым не хватает внимания. Разговоры, помощь по дому, прогулки.',
-    duties: [
-      'Аккуратность и доброжелательность',
-      'Свободное время 1–2 раза в неделю',
-      'Готовность к регулярным визитам',
-    ],
-    format: 'offline',
-    duration: 'regular',
-    category: 'Соц. помощь',
-    location: 'Москва',
-    dateFrom: '15 мая',
-    dateTo: '30 мая',
-    slots: 12,
-    responses: 5,
-    emoji: '💛',
-    gradient: 'linear-gradient(135deg, #FFF0D1 0%, #FFDFA6 100%)',
-    organizer: 'Забота',
-  },
-]
 
 export interface ChatMessage {
   from: 'them' | 'me'
@@ -202,15 +103,16 @@ export interface MyResponse {
   taskId: number
   taskTitle: string
   foundation: string
-  status: 'pending' | 'approved' | 'rejected'
+  /** pending | approved | rejected | completed | hours_awarded */
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'hours_awarded'
   date: string
+  hoursAwarded: number
+  contact: string
+  place: string
+  timeFrom: string
+  timeTo: string
+  closed: boolean
 }
-
-export const myResponses: MyResponse[] = [
-  { taskId: 1, taskTitle: 'Помощь приюту для животных', foundation: 'Фонд «Добрые лапы»', status: 'approved', date: '12.05.2025' },
-  { taskId: 3, taskTitle: 'Онлайн-консультации для детей', foundation: 'Дельта с друзьями', status: 'pending', date: '14.05.2025' },
-  { taskId: 4, taskTitle: 'Экологическая акция «Чистый парк»', foundation: 'Зелёный мир', status: 'pending', date: '20.05.2025' },
-]
 
 export interface FoundationRow {
   id: number

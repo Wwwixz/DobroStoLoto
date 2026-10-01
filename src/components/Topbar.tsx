@@ -1,15 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bell, ChevronDown, Dot } from 'lucide-react'
-import { notifications as initialNotifications } from '../data/notifications'
-import { getStoredUser } from '../lib/api'
+import { readAllNotifications, useApi, type NotificationItem } from '../lib/api'
 
 export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState(initialNotifications)
+  const { data, reload } = useApi<NotificationItem[]>('/notifications')
+  const [items, setItems] = useState<NotificationItem[]>([])
   const wrapRef = useRef<HTMLDivElement>(null)
 
-  const user = getStoredUser()
-  const userName = user?.fullName ?? 'Алексей Иванов'
+  useEffect(() => {
+    setItems(data ?? [])
+  }, [data])
+
+  // Обновляем список, когда пользователь открывает панель уведомлений
+  useEffect(() => {
+    if (open) reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const user = getStoredUserName()
+  const userName = user ?? 'Алексей Иванов'
   const initials = userName
     .split(' ')
     .map((w) => w[0] ?? '')
@@ -36,7 +46,14 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
     }
   }, [])
 
-  const markAllRead = () => setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+  const markAllRead = async () => {
+    try {
+      await readAllNotifications()
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+    } catch {
+      // молча: уведомления не критичны
+    }
+  }
 
   return (
     <header className="topbar">
@@ -57,6 +74,14 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
               )}
             </div>
             <div className="notif-list">
+              {items.length === 0 && (
+                <div className="notif-item">
+                  <div>
+                    <div className="notif-title">Пока пусто</div>
+                    <p className="notif-text">Уведомления появятся по мере событий: отклики, модерация, сообщения.</p>
+                  </div>
+                </div>
+              )}
               {items.map((n) => (
                 <div key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`}>
                   {!n.read && <Dot className="notif-dot" size={28} strokeWidth={0} fill="currentColor" />}
@@ -82,4 +107,14 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
       </div>
     </header>
   )
+}
+
+function getStoredUserName(): string | null {
+  try {
+    const raw = localStorage.getItem('ds_user')
+    if (!raw) return null
+    return (JSON.parse(raw) as { fullName?: string }).fullName ?? null
+  } catch {
+    return null
+  }
 }

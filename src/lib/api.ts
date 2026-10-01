@@ -13,6 +13,50 @@ export interface AuthUser {
   role: Role
   registeredAt: string
   hours: number
+  superAdmin: boolean
+  department: string
+  position: string
+}
+
+/** Сотрудник из замоканной базы: данные подтягиваются при регистрации. */
+export interface EmployeeInfo {
+  employeeId: string
+  corporateEmail: string
+  fullName: string
+  city: string
+  department: string
+  position: string
+}
+
+export async function lookupEmployee(query: string): Promise<EmployeeInfo> {
+  return api<EmployeeInfo>(`/employees/lookup?query=${encodeURIComponent(query)}`)
+}
+
+export interface NotificationItem {
+  id: number
+  title: string
+  text: string
+  read: boolean
+  time: string
+}
+
+export function readAllNotifications(): Promise<void> {
+  return api<void>('/notifications/read-all', { method: 'POST' })
+}
+
+export interface AchievementItem {
+  key: string
+  title: string
+  desc: string
+  earned: boolean
+}
+
+export interface AdminUserRow {
+  id: number
+  fullName: string
+  email: string
+  superAdmin: boolean
+  registeredAt: string
 }
 
 export interface HistoryEntry {
@@ -26,6 +70,8 @@ export interface HistoryEntry {
 
 export interface AnalyticsStats {
   volunteers: number
+  totalTasks: number
+  approvedFoundations: number
   completedTasks: number
   hours: number
 }
@@ -119,6 +165,8 @@ export async function register(payload: {
   email: string
   phone: string
   password: string
+  foundationName?: string
+  inn?: string
 }): Promise<AuthUser> {
   const user = await api<AuthUser>('/auth/register', {
     method: 'POST',
@@ -128,14 +176,96 @@ export async function register(payload: {
   return user
 }
 
-/** Простой хук загрузки GET-эндпоинта. */
-export function useApi<T>(path: string): { data: T | null; loading: boolean; error: string | null; reload: () => void } {
+export interface CreateTaskPayload {
+  title: string
+  description: string
+  duties: string[]
+  format: 'online' | 'offline'
+  duration: 'one' | 'regular' | 'longterm'
+  category: string
+  location: string
+  dateFrom: string
+  dateTo: string
+  slots: number
+  emoji?: string
+  organizer?: string
+  proBono?: boolean
+  skills?: string[]
+  deadline?: string
+  timeFrom?: string
+  timeTo?: string
+  place?: string
+  onlineLink?: string
+  contact?: string
+  completionTerms?: string
+  expectedResult?: string
+}
+
+export interface FundTaskRow {
+  id: number
+  title: string
+  status: 'moderation' | 'published' | 'rework'
+  closed: boolean
+  adminComment: string | null
+  responsesCount: number
+  approvedCount: number
+  confirmedCount: number
+  slots: number
+}
+
+export interface ApplicantRow {
+  responseId: number
+  volunteerId: number
+  fullName: string
+  city: string
+  department: string
+  position: string
+  volunteerHours: number
+  registeredAt: string
+  status: 'pending' | 'approved' | 'rejected' | 'completed' | 'hours_awarded'
+  hoursAwarded: number
+}
+
+export interface FundReport {
+  tasksTotal: number
+  tasksActive: number
+  tasksClosed: number
+  responsesTotal: number
+  responsesApproved: number
+  volunteersConfirmed: number
+  hoursTotal: number
+}
+
+export interface VolunteerReportRow {
+  id: number
+  fullName: string
+  registeredAt: string
+  responsesCount: number
+  completedCount: number
+  participationHours: number
+  awardedHours: number
+  city: string
+  department: string
+  position: string
+  categories: string[]
+}
+
+/** Простой хук загрузки GET-эндпоинта. path = null — не загружать ничего. */
+export function useApi<T>(
+  path: string | null,
+): { data: T | null; loading: boolean; error: string | null; reload: () => void } {
   const [data, setData] = useState<T | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(path !== null)
   const [error, setError] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
+    if (!path) {
+      setData(null)
+      setLoading(false)
+      setError(null)
+      return
+    }
     let alive = true
     setLoading(true)
     setError(null)

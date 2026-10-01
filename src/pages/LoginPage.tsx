@@ -18,7 +18,7 @@ export const LoginPage = () => {
     setBusy(true)
     try {
       const user = await login(email, password)
-      navigate(user.role === 'VOLUNTEER' ? '/dashboard' : '/admin')
+      navigate(user.role === 'VOLUNTEER' ? '/dashboard' : user.role === 'FOUNDATION' ? '/fund' : '/admin')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось войти')
     } finally {

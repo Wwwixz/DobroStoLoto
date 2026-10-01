@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Send, ChevronLeft, Building2 } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import type { Chat } from '../data'
@@ -6,7 +7,11 @@ import { api } from '../lib/api'
 
 export const MessagesPage = () => {
   const [chats, setChats] = useState<Chat[] | null>(null)
-  const [activeId, setActiveId] = useState<number | null>(null)
+  const [searchParams] = useSearchParams()
+  const [activeId, setActiveId] = useState<number | null>(() => {
+    const chat = searchParams.get('chat')
+    return chat ? Number(chat) : null
+  })
   const [text, setText] = useState('')
 
   useEffect(() => {
@@ -24,7 +29,8 @@ export const MessagesPage = () => {
   }, [])
 
   const list = chats ?? []
-  const activeIdValue = activeId ?? list[0]?.id ?? null
+  const activeIdValue =
+    activeId && list.some((c) => c.id === activeId) ? activeId : list[0]?.id ?? null
   const active = list.find((c) => c.id === activeIdValue)
 
   const send = async () => {
@@ -47,6 +53,17 @@ export const MessagesPage = () => {
       <VolunteerLayout>
         <h1 className="page-title" style={{ marginBottom: 16 }}>Сообщения</h1>
         <p style={{ color: 'var(--muted)' }}>Загрузка диалогов…</p>
+      </VolunteerLayout>
+    )
+  }
+
+  if (list.length === 0) {
+    return (
+      <VolunteerLayout>
+        <h1 className="page-title" style={{ marginBottom: 16 }}>Сообщения</h1>
+        <div className="empty-state">
+          Диалогов пока нет. Они появятся, когда фонды начнут переписку по вашим откликам.
+        </div>
       </VolunteerLayout>
     )
   }

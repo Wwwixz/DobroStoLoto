@@ -11,6 +11,7 @@ import { HistoryPage } from './pages/HistoryPage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { AdminPage } from './pages/AdminPage'
+import { FundPage } from './pages/FundPage'
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/fund" element={<FundPage />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>

@@ -15,7 +15,9 @@ import ru.dobrostoloto.user.User;
 @RequestMapping("/api/responses")
 public class ResponseController {
 
-    public record ResponseDto(Long taskId, String taskTitle, String foundation, String status, String date) {
+    public record ResponseDto(Long taskId, String taskTitle, String foundation, String status, String date,
+                              int hoursAwarded, String contact, String place, String timeFrom, String timeTo,
+                              boolean closed) {
     }
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -38,7 +40,13 @@ public class ResponseController {
                         r.task.title,
                         r.task.organizer,
                         r.status,
-                        r.createdAt.format(DATE)
+                        r.createdAt.format(DATE),
+                        r.hoursAwarded,
+                        r.task.contact == null ? "" : r.task.contact,
+                        r.task.place == null ? "" : r.task.place,
+                        r.task.timeFrom == null ? "" : r.task.timeFrom,
+                        r.task.timeTo == null ? "" : r.task.timeTo,
+                        r.task.closed
                 ))
                 .toList();
     }

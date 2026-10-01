@@ -11,7 +11,10 @@ public record UserDto(
         String city,
         String role,
         String registeredAt,
-        int hours
+        int hours,
+        boolean superAdmin,
+        String department,
+        String position
 ) {
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
@@ -25,7 +28,10 @@ public record UserDto(
                 u.city,
                 u.role,
                 u.registeredAt.format(DATE),
-                u.hours
+                u.hours,
+                u.superAdmin,
+                u.department == null ? "" : u.department,
+                u.position == null ? "" : u.position
         );
     }
 }

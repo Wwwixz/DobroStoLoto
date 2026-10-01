@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { UserPlus, Search, Heart, Award } from 'lucide-react'
 import { Logo } from '../components/Logo'
+import { getStoredUser } from '../lib/api'
 
 const steps = [
   { icon: UserPlus, title: 'Зарегистрируйтесь на платформе' },
@@ -9,20 +10,37 @@ const steps = [
   { icon: Award, title: 'Получите подтверждение и волонтёрские часы' },
 ]
 
-export const LandingPage = () => (
-  <>
+export const LandingPage = () => {
+  const user = getStoredUser()
+  // Для авторизованного пользователя лендинг не «разлогинивает»:
+  // вместо входа/регистрации предлагаем перейти в кабинет
+  const cabinetPath =
+    user?.role === 'ADMIN' ? '/admin' : user?.role === 'FOUNDATION' ? '/fund' : '/dashboard'
+
+  return (
+    <>
     <header className="public-header">
       <div className="container">
         <Logo />
         <nav className="main-nav">
           <a href="#how">О проекте</a>
-          <a href="/tasks">Задания</a>
+          <Link to="/tasks">Задания</Link>
           <a href="#how">Фонды</a>
-          <Link to="/login">Войти</Link>
+          {user ? (
+            <Link to={cabinetPath}>Личный кабинет</Link>
+          ) : (
+            <Link to="/login">Войти</Link>
+          )}
         </nav>
-        <Link to="/registration" className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
-          Регистрация
-        </Link>
+        {user ? (
+          <Link to={cabinetPath} className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
+            В кабинет
+          </Link>
+        ) : (
+          <Link to="/registration" className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
+            Регистрация
+          </Link>
+        )}
       </div>
     </header>
 
@@ -38,7 +56,11 @@ export const LandingPage = () => (
               Платформа для корпоративного волонтёрства сотрудников Столото
             </p>
             <div className="hero-actions">
-              <Link to="/registration" className="btn btn-primary">Стать волонтёром</Link>
+              {user ? (
+                <Link to="/tasks" className="btn btn-primary">Найти задание</Link>
+              ) : (
+                <Link to="/registration" className="btn btn-primary">Стать волонтёром</Link>
+              )}
               <a href="#how" className="btn btn-outline">Узнать больше</a>
             </div>
           </div>
@@ -103,11 +125,23 @@ export const LandingPage = () => (
     <section className="landing-footer">
       <div className="container">
         <div className="footer-cta">
-          <div>
-            <h3>Уже есть аккаунт?</h3>
-            <p>Войдите, чтобы откликнуться на задание</p>
-          </div>
-          <Link to="/login" className="btn btn-primary">Войти</Link>
+          {user ? (
+            <>
+              <div>
+                <h3>Вы авторизованы</h3>
+                <p>Ваша сессия активна — возвращайтесь к заданиям</p>
+              </div>
+              <Link to="/tasks" className="btn btn-primary">К заданиям</Link>
+            </>
+          ) : (
+            <>
+              <div>
+                <h3>Уже есть аккаунт?</h3>
+                <p>Войдите, чтобы откликнуться на задание</p>
+              </div>
+              <Link to="/login" className="btn btn-primary">Войти</Link>
+            </>
+          )}
         </div>
         <div className="footer-cta" style={{ marginTop: 18, background: '#fff', border: '1px solid var(--border)' }}>
           <div>
@@ -117,5 +151,6 @@ export const LandingPage = () => (
         </div>
       </div>
     </section>
-  </>
-)
+    </>
+  )
+}
