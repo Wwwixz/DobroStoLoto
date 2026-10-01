@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { PlusSquare, Search, Edit2, Trash2, Users2 } from 'lucide-react'
+import { PlusSquare, Search, Edit2, Trash2, Users2, Lock } from 'lucide-react'
 import { useApi, api } from '../lib/api'
+import { useMyFoundation } from '../lib/foundationApi'
 import type { Task } from '../data'
 
 export const FundTasksPage = () => {
   const [query, setQuery] = useState('')
   const { data: tasks, loading, error, reload } = useApi<Task[]>('/tasks')
+  const { data: foundation } = useMyFoundation()
+  const approved = foundation?.status === 'approved'
 
   const filtered = (tasks ?? []).filter((t) =>
     query.trim() ? t.title.toLowerCase().includes(query.trim().toLowerCase()) : true,
@@ -29,9 +32,15 @@ export const FundTasksPage = () => {
           <h1 className="page-title">Мои задания</h1>
           <p className="page-sub">Создавайте и управляйте заданиями</p>
         </div>
-        <Link to="/fund/tasks/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-          <PlusSquare size={16} /> Новое задание
-        </Link>
+        {approved ? (
+          <Link to="/fund/tasks/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
+            <PlusSquare size={16} /> Новое задание
+          </Link>
+        ) : (
+          <button className="btn btn-outline" disabled title="Станет доступно после одобрения организации">
+            <Lock size={15} /> После одобрения
+          </button>
+        )}
       </div>
 
       <div className="tasks-controls" style={{ marginBottom: 16 }}>
@@ -84,12 +93,20 @@ export const FundTasksPage = () => {
                 <td>{t.dateFrom} — {t.dateTo}</td>
                 <td>
                   <div className="row-actions">
-                    <Link to={`/fund/tasks/${t.id}/edit`} className="mini-btn btn-primary" style={{ textDecoration: 'none' }}>
-                      <Edit2 size={13} /> Ред.
-                    </Link>
-                    <button className="mini-btn btn-danger" onClick={() => removeTask(t.id)}>
-                      <Trash2 size={13} /> Удал.
-                    </button>
+                    {approved ? (
+                      <>
+                        <Link to={`/fund/tasks/${t.id}/edit`} className="mini-btn btn-primary" style={{ textDecoration: 'none' }}>
+                          <Edit2 size={13} /> Ред.
+                        </Link>
+                        <button className="mini-btn btn-danger" onClick={() => removeTask(t.id)}>
+                          <Trash2 size={13} /> Удал.
+                        </button>
+                      </>
+                    ) : (
+                      <span className="badge badge-gray">
+                        <Lock size={12} /> После одобрения
+                      </span>
+                    )}
                   </div>
                 </td>
               </tr>

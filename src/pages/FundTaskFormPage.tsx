@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, PlusSquare, Save } from 'lucide-react'
+import { ArrowLeft, PlusSquare, Save, Lock } from 'lucide-react'
 import { api, useApi } from '../lib/api'
+import { useMyFoundation } from '../lib/foundationApi'
 import type { Task } from '../data'
 
 const CATEGORIES = ['Животные', 'Дети', 'Соц. помощь', 'Экология']
@@ -19,6 +20,8 @@ export const FundTaskFormPage = () => {
   const navigate = useNavigate()
   const isEdit = Boolean(id)
   const { data: existing } = useApi<Task>(isEdit ? `/tasks/${id ?? ''}` : '')
+  const { data: foundation } = useMyFoundation()
+  const approved = foundation?.status === 'approved'
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -190,8 +193,20 @@ export const FundTaskFormPage = () => {
 
         {error && <p style={{ color: '#E11D48', margin: 0 }}>{error}</p>}
 
+        {!approved && (
+          <p style={{ color: 'var(--muted)', margin: 0, fontSize: 13.5 }}>
+            <Lock size={13} style={{ display: 'inline', verticalAlign: -2 }} /> Сохранение станет доступно,
+            когда администратор одобрит организацию.
+          </p>
+        )}
+
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button type="submit" className="btn btn-primary" disabled={busy}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={busy || !approved}
+            title={!approved ? 'Станет доступно после одобрения организации' : undefined}
+          >
             {busy ? 'Сохраняем…' : <><Save size={15} /> {isEdit ? 'Сохранить изменения' : 'Опубликовать задание'}</>}
           </button>
           <Link to="/fund/tasks" className="btn" style={{ textDecoration: 'none' }}>Отмена</Link>

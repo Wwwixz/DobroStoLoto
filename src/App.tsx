@@ -30,6 +30,7 @@ import { FundResponsesPage } from './pages/FundResponsesPage'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
 import { AdminTasksPage } from './pages/AdminTasksPage'
 import { AdminFoundationsPage } from './pages/AdminFoundationsPage'
+import { AdminFoundationDetailPage } from './pages/AdminFoundationDetailPage'
 import { AdminVolunteersPage } from './pages/AdminVolunteersPage'
 import { AdminPage } from './pages/AdminPage'
 
@@ -130,6 +131,7 @@ function App() {
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/tasks" element={<AdminTasksPage />} />
           <Route path="/admin/foundations" element={<AdminFoundationsPage />} />
+          <Route path="/admin/foundations/:id" element={<AdminFoundationDetailPage />} />
           <Route path="/admin/volunteers" element={<AdminVolunteersPage />} />
         </Route>
 

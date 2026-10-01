@@ -109,12 +109,6 @@ export const Sidebar = () => {
         ))}
       </nav>
       <div style={{ marginTop: 'auto', padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {role !== 'ADMIN' && (
-          <NavLink to="/admin" className={({ isActive }) => `side-link ${isActive ? 'active' : ''}`}>
-            <ShieldCheck size={19} />
-            Админ
-          </NavLink>
-        )}
         <button
           className="side-link"
           onClick={onLogout}

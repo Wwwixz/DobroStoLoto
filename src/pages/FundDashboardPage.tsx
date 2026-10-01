@@ -1,11 +1,29 @@
 import { Link } from 'react-router-dom'
-import { FileText, Users2, Clock, PlusSquare, Star } from 'lucide-react'
-import { useApi, type AuthUser } from '../lib/api'
+import { FileText, Users2, Clock, PlusSquare, Star, Lock } from 'lucide-react'
+import { useApi } from '../lib/api'
+import { useMyFoundation, useMyProfile } from '../lib/foundationApi'
 import type { Task } from '../data'
 
 export const FundDashboardPage = () => {
-  const { data: profile } = useApi<AuthUser>('/profile')
+  const { data: profile } = useMyProfile()
   const { data: tasks } = useApi<Task[]>('/tasks')
+  const { data: foundation } = useMyFoundation()
+  const approved = foundation?.status === 'approved'
+
+  const NewTaskButton = ({ small = false }: { small?: boolean }) =>
+    approved ? (
+      <Link
+        to="/fund/tasks/new"
+        className={`btn btn-primary ${small ? 'btn-sm' : ''}`}
+        style={{ textDecoration: 'none' }}
+      >
+        <PlusSquare size={small ? 15 : 16} /> Создать задание
+      </Link>
+    ) : (
+      <button className={`btn btn-outline ${small ? 'btn-sm' : ''}`} disabled title="Станет доступно после одобрения организации">
+        <Lock size={15} /> После одобрения
+      </button>
+    )
 
   const myTasks = tasks ?? []
   const totalResponses = myTasks.reduce((s, t) => s + (t.responses ?? 0), 0)
@@ -40,10 +58,7 @@ export const FundDashboardPage = () => {
 
       <div className="section-head" style={{ marginTop: 24 }}>
         <h2>Мои последние задания</h2>
-        <Link to="/fund/tasks/new" className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
-          <PlusSquare size={15} />
-          Создать задание
-        </Link>
+        <NewTaskButton small />
       </div>
 
       <div className="popular-grid">
@@ -73,9 +88,7 @@ export const FundDashboardPage = () => {
         <h2>Быстрые действия</h2>
       </div>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Link to="/fund/tasks/new" className="btn btn-primary" style={{ textDecoration: 'none' }}>
-          <PlusSquare size={16} /> Создать задание
-        </Link>
+        <NewTaskButton />
         <Link to="/fund/tasks" className="btn" style={{ textDecoration: 'none' }}>
           Все задания
         </Link>

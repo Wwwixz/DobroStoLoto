@@ -1,9 +1,15 @@
-import {
-  api,
-  useApi,
-  type FoundationRow,
-  type FoundationStatus,
-} from '../lib/api'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Eye } from 'lucide-react'
+import { type FoundationStatus } from '../lib/api'
+import { getAdminFoundations, setFoundationStatus } from '../lib/foundationApi'
+
+interface FoundationListRow {
+  id: number
+  name: string
+  inn: string
+  status: FoundationStatus
+}
 
 const statusMap: Record<FoundationStatus, { label: string; cls: string }> = {
   pending: { label: 'На проверке', cls: 'badge-yellow' },
@@ -12,15 +18,26 @@ const statusMap: Record<FoundationStatus, { label: string; cls: string }> = {
 }
 
 export const AdminFoundationsPage = () => {
-  const { data: foundationsData, reload: reloadFoundations } = useApi<FoundationRow[]>('/admin/foundations')
-  const foundations = foundationsData ?? []
+  const [foundations, setFoundations] = useState<FoundationListRow[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const setFoundationStatus = async (id: number, status: FoundationStatus) => {
-    await api<FoundationRow>(`/admin/foundations/${id}/status`, {
-      method: 'POST',
-      body: JSON.stringify({ status }),
-    })
-    reloadFoundations()
+  const load = () => {
+    setLoading(true)
+    getAdminFoundations()
+      .then(setFoundations)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(load, [])
+
+  const setFoundationStatusSafe = async (id: number, status: FoundationStatus) => {
+    try {
+      await setFoundationStatus(id, status)
+      load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Не удалось изменить статус')
+    }
   }
 
   return (
@@ -51,20 +68,36 @@ export const AdminFoundationsPage = () => {
                     </span>
                   </td>
                   <td>
-                    {f.status === 'pending' && (
-                      <div className="row-actions">
-                        <button className="mini-btn btn-success" onClick={() => setFoundationStatus(f.id, 'approved')}>
-                          Одобрить
-                        </button>
-                        <button className="mini-btn btn-danger" onClick={() => setFoundationStatus(f.id, 'rejected')}>
-                          Отклонить
-                        </button>
-                      </div>
-                    )}
+                    <div className="row-actions">
+                      <Link
+                        to={`/admin/foundations/${f.id}`}
+                        className="mini-btn btn-primary"
+                        style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                      >
+                        <Eye size={13} /> Смотреть
+                      </Link>
+                      {f.status === 'pending' && (
+                        <>
+                          <button className="mini-btn btn-success" onClick={() => setFoundationStatusSafe(f.id, 'approved')}>
+                            Одобрить
+                          </button>
+                          <button className="mini-btn btn-danger" onClick={() => setFoundationStatusSafe(f.id, 'rejected')}>
+                            Отклонить
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
-              {foundations.length === 0 && (
+              {loading && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>
+                    Загрузка…
+                  </td>
+                </tr>
+              )}
+              {!loading && foundations.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'center', padding: 24, color: 'var(--muted)' }}>
                     Фондов на проверке нет

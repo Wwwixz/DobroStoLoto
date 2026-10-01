@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useState } from 'react'
 import { Sidebar, BottomNav, ROLE_LABEL } from './Sidebar'
 import { Topbar } from './Topbar'
+import { FundStatusBanner } from './FundStatusBanner'
 import { getStoredUser, type Role } from '../lib/api'
 
 interface AuthenticatedLayoutProps {
@@ -45,9 +46,12 @@ export const VolunteerRoleLayout = ({ children }: { children: ReactNode }) => (
   <AuthenticatedLayout role="VOLUNTEER">{children}</AuthenticatedLayout>
 )
 
-/** Layout для фонда. */
+/** Layout для фонда: показывает статус-баннер организации. */
 export const FundLayout = ({ children }: { children: ReactNode }) => (
-  <AuthenticatedLayout role="FOUNDATION">{children}</AuthenticatedLayout>
+  <AuthenticatedLayout role="FOUNDATION">
+    <FundStatusBanner />
+    {children}
+  </AuthenticatedLayout>
 )
 
 /** Layout для администратора. */
