@@ -1,4 +1,5 @@
-import { Calendar } from 'lucide-react'
+import { Calendar, ClipboardCheck, Clock, ClipboardList, HeartHandshake, Users2, Building2, PieChart } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { getStoredUser, useApi, type Analytics, type AnalyticsCategory, type Role } from '../lib/api'
 
 const categoryColors: Record<string, string> = {
@@ -17,6 +18,13 @@ interface StatCard {
   num: number | string
   delta: string
   accent: string
+  icon: LucideIcon
+}
+
+const ROLE_SUBTITLE: Record<Role, string> = {
+  VOLUNTEER: 'Ваша личная статистика участия',
+  FOUNDATION: 'Статистика по заданиям вашего фонда',
+  ADMIN: 'Статистика по всей платформе',
 }
 
 function buildStatsCards(role: Role, stats: Analytics['stats']): StatCard[] {
@@ -28,12 +36,14 @@ function buildStatsCards(role: Role, stats: Analytics['stats']): StatCard[] {
       num: stats.completedTasks,
       delta: 'ваших участий',
       accent: 'linear-gradient(135deg,#2563EB,#06B6D4)',
+      icon: ClipboardCheck,
     })
     cards.push({
       label: 'Волонтёрских часов',
       num: stats.hours,
       delta: 'за всё время',
       accent: 'linear-gradient(135deg,#F59E0B,#F97316)',
+      icon: Clock,
     })
     return cards
   }
@@ -44,24 +54,28 @@ function buildStatsCards(role: Role, stats: Analytics['stats']): StatCard[] {
       num: stats.publishedTasks ?? 0,
       delta: 'ваших заданий',
       accent: 'linear-gradient(135deg,#2563EB,#06B6D4)',
+      icon: ClipboardList,
     })
     cards.push({
       label: 'Откликов волонтёров',
       num: stats.totalResponses ?? 0,
       delta: 'всего откликов',
       accent: 'linear-gradient(135deg,#16A34A,#84CC16)',
+      icon: HeartHandshake,
     })
     cards.push({
       label: 'Выполнено заданий',
       num: stats.completedTasks,
       delta: 'закрытых заданий',
       accent: 'linear-gradient(135deg,#8B5CF6,#EC4899)',
+      icon: ClipboardCheck,
     })
     cards.push({
       label: 'Волонтёрских часов',
       num: stats.hours,
       delta: 'сделано у вас',
       accent: 'linear-gradient(135deg,#F59E0B,#F97316)',
+      icon: Clock,
     })
     return cards
   }
@@ -71,30 +85,35 @@ function buildStatsCards(role: Role, stats: Analytics['stats']): StatCard[] {
     num: stats.volunteers ?? 0,
     delta: 'волонтёров на платформе',
     accent: 'linear-gradient(135deg,#16A34A,#84CC16)',
+    icon: Users2,
   })
   cards.push({
     label: 'Всего фондов',
     num: stats.foundations ?? 0,
     delta: 'фондов зарегистрировано',
     accent: 'linear-gradient(135deg,#2563EB,#06B6D4)',
+    icon: Building2,
   })
   cards.push({
     label: 'Опубликовано заданий',
     num: stats.publishedTasks ?? 0,
     delta: 'активно на платформе',
     accent: 'linear-gradient(135deg,#8B5CF6,#EC4899)',
+    icon: ClipboardList,
   })
   cards.push({
     label: 'Выполнено заданий',
     num: stats.completedTasks,
     delta: 'всего участий',
     accent: 'linear-gradient(135deg,#F59E0B,#F97316)',
+    icon: ClipboardCheck,
   })
   cards.push({
     label: 'Волонтёрских часов',
     num: stats.hours,
     delta: 'суммарно за всё время',
     accent: 'linear-gradient(135deg,#EF4444,#F97316)',
+    icon: Clock,
   })
   return cards
 }
@@ -115,6 +134,7 @@ export const AnalyticsPage = () => {
       <div className="analytics-top">
         <div>
           <h1 className="page-title">Аналитика</h1>
+          <p style={{ color: 'var(--muted)', fontSize: 14, marginTop: 2 }}>{ROLE_SUBTITLE[role]}</p>
         </div>
         <span className="date-chip">
           <Calendar size={15} />
@@ -122,7 +142,7 @@ export const AnalyticsPage = () => {
         </span>
       </div>
 
-      {loading && <p style={{ color: 'var(--muted)' }}>Загрузка аналитики…</p>}
+      {loading && <div className="empty-state">Загрузка аналитики…</div>}
       {error && <div className="empty-state">Не удалось загрузить аналитику: {error}</div>}
 
       {data && (
@@ -134,10 +154,10 @@ export const AnalyticsPage = () => {
                   <span
                     style={{
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      width: 28, height: 28, borderRadius: 8, background: c.accent, color: '#fff',
+                      width: 28, height: 28, borderRadius: 8, background: c.accent, color: '#fff', flexShrink: 0,
                     }}
                   >
-                    <span style={{ fontSize: 14 }}>📊</span>
+                    <c.icon size={15} />
                   </span>
                   {c.label}
                 </span>
@@ -164,42 +184,49 @@ export const AnalyticsPage = () => {
 
             <div className="chart-card">
               <h3>Категории заданий</h3>
-              <div className="donut-wrap">
-                <svg width="120" height="120" viewBox="0 0 120 120" style={{ flexShrink: 0 }}>
-                  {categories.map((s, i) => {
-                    const len = (s.value / 100) * C
-                    const el = (
-                      <circle
-                        key={s.label}
-                        r={R}
-                        cx="60"
-                        cy="60"
-                        fill="none"
-                        stroke={categoryColors[s.label] ?? fallbackColors[i % fallbackColors.length]}
-                        strokeWidth="22"
-                        strokeDasharray={`${len} ${C - len}`}
-                        strokeDashoffset={-offset}
-                        transform="rotate(-90 60 60)"
-                      />
-                    )
-                    offset += len
-                    return el
-                  })}
-                  <circle r="24" cx="60" cy="60" fill="#fff" />
-                </svg>
-                <div className="donut-legend">
-                  {categories.map((s, i) => (
-                    <div className="legend-row" key={s.label}>
-                      <span
-                        className="legend-dot"
-                        style={{ background: categoryColors[s.label] ?? fallbackColors[i % fallbackColors.length] }}
-                      />
-                      {s.label}
-                      <span className="pct">{s.value}%</span>
-                    </div>
-                  ))}
+              {categories.length === 0 ? (
+                <div className="empty-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '28px 0' }}>
+                  <PieChart size={28} style={{ color: 'var(--muted)' }} />
+                  Пока нет данных по категориям
                 </div>
-              </div>
+              ) : (
+                <div className="donut-wrap">
+                  <svg width="120" height="120" viewBox="0 0 120 120" style={{ flexShrink: 0 }}>
+                    {categories.map((s, i) => {
+                      const len = (s.value / 100) * C
+                      const el = (
+                        <circle
+                          key={s.label}
+                          r={R}
+                          cx="60"
+                          cy="60"
+                          fill="none"
+                          stroke={categoryColors[s.label] ?? fallbackColors[i % fallbackColors.length]}
+                          strokeWidth="22"
+                          strokeDasharray={`${len} ${C - len}`}
+                          strokeDashoffset={-offset}
+                          transform="rotate(-90 60 60)"
+                        />
+                      )
+                      offset += len
+                      return el
+                    })}
+                    <circle r="24" cx="60" cy="60" fill="#fff" />
+                  </svg>
+                  <div className="donut-legend">
+                    {categories.map((s, i) => (
+                      <div className="legend-row" key={s.label}>
+                        <span
+                          className="legend-dot"
+                          style={{ background: categoryColors[s.label] ?? fallbackColors[i % fallbackColors.length] }}
+                        />
+                        {s.label}
+                        <span className="pct">{s.value}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </>
