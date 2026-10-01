@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegistrationPage } from './pages/RegistrationPage'
+import { RegisterFormPage } from './pages/RegisterFormPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { TasksPage } from './pages/TasksPage'
 import { TaskDetailPage } from './pages/TaskDetailPage'
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/registration" element={<RegistrationPage />} />
+        <Route path="/registration/:role" element={<RegisterFormPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/tasks/:id" element={<TaskDetailPage />} />
