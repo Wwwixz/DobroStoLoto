@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Search } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import { TaskCard } from '../components/TaskCard'
-import { tasks } from '../data'
+import type { Task } from '../data'
+import { useApi } from '../lib/api'
 
 const categories = ['Все категории', 'Животные', 'Дети', 'Соц. помощь', 'Экология']
 
@@ -11,8 +12,9 @@ export const TasksPage = () => {
   const [category, setCategory] = useState('Все категории')
   const [format, setFormat] = useState('all')
   const [duration, setDuration] = useState('all')
+  const { data, loading, error } = useApi<Task[]>('/tasks')
 
-  const filtered = tasks.filter((t) => {
+  const filtered = (data ?? []).filter((t) => {
     const q = query.trim().toLowerCase()
     if (q && !t.title.toLowerCase().includes(q)) return false
     if (category !== 'Все категории' && t.category !== category) return false
@@ -55,10 +57,12 @@ export const TasksPage = () => {
       </div>
 
       <div className="tasks-list">
-        {filtered.length === 0 ? (
+        {loading && <div className="empty-state">Загрузка заданий…</div>}
+        {error && <div className="empty-state">Не удалось загрузить задания: {error}</div>}
+        {!loading && !error && filtered.length === 0 ? (
           <div className="empty-state">Задания не найдены. Попробуйте изменить фильтры.</div>
         ) : (
-          filtered.map((task) => <TaskCard key={task.id} task={task} />)
+          !error && filtered.map((task) => <TaskCard key={task.id} task={task} />)
         )}
       </div>
     </VolunteerLayout>

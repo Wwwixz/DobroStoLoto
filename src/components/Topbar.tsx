@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { Bell, ChevronDown, Dot } from 'lucide-react'
 import { notifications as initialNotifications } from '../data/notifications'
+import { getStoredUser } from '../lib/api'
 
 export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState(initialNotifications)
   const wrapRef = useRef<HTMLDivElement>(null)
+
+  const user = getStoredUser()
+  const userName = user?.fullName ?? 'Алексей Иванов'
+  const initials = userName
+    .split(' ')
+    .map((w) => w[0] ?? '')
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
 
   const unreadCount = items.filter((n) => !n.read).length
 
@@ -63,9 +73,9 @@ export const Topbar = ({ role = 'Волонтёр' }: { role?: string }) => {
       </div>
 
       <div className="user-chip">
-        <span className="avatar">АИ</span>
+        <span className="avatar">{initials}</span>
         <span>
-          <span className="user-name">Алексей Иванов</span>
+          <span className="user-name">{userName}</span>
           <span className="user-role" style={{ display: 'block' }}>{role}</span>
         </span>
         <ChevronDown size={16} style={{ color: 'var(--muted)' }} />

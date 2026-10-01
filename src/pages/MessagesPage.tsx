@@ -1,26 +1,54 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Send, ChevronLeft, Building2 } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
-import { chats as initialChats, type Chat } from '../data'
+import type { Chat } from '../data'
+import { api } from '../lib/api'
 
 export const MessagesPage = () => {
-  const [chats, setChats] = useState<Chat[]>(initialChats)
-  const [activeId, setActiveId] = useState(initialChats[0].id)
+  const [chats, setChats] = useState<Chat[] | null>(null)
+  const [activeId, setActiveId] = useState<number | null>(null)
   const [text, setText] = useState('')
 
-  const active = chats.find((c) => c.id === activeId)
+  useEffect(() => {
+    let alive = true
+    api<Chat[]>('/chats')
+      .then((list) => {
+        if (alive) setChats(list)
+      })
+      .catch(() => {
+        if (alive) setChats([])
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
 
-  const send = () => {
+  const list = chats ?? []
+  const activeIdValue = activeId ?? list[0]?.id ?? null
+  const active = list.find((c) => c.id === activeIdValue)
+
+  const send = async () => {
     const value = text.trim()
-    if (!value) return
-    setChats((prev) =>
-      prev.map((c) =>
-        c.id === activeId
-          ? { ...c, last: value, time: 'Сейчас', messages: [...c.messages, { from: 'me', text: value, time: 'Сейчас' }] }
-          : c
-      )
-    )
+    if (!value || !activeIdValue) return
+    try {
+      const updated = await api<Chat>(`/chats/${activeIdValue}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ text: value }),
+      })
+      setChats((prev) => (prev ?? []).map((c) => (c.id === activeIdValue ? updated : c)))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Сообщение не отправлено')
+    }
     setText('')
+  }
+
+  if (chats === null) {
+    return (
+      <VolunteerLayout>
+        <h1 className="page-title" style={{ marginBottom: 16 }}>Сообщения</h1>
+        <p style={{ color: 'var(--muted)' }}>Загрузка диалогов…</p>
+      </VolunteerLayout>
+    )
   }
 
   return (
@@ -31,10 +59,10 @@ export const MessagesPage = () => {
         <div className="chats-panel">
           <h2>Диалоги</h2>
           <div className="chat-list">
-            {chats.map((chat) => (
+            {list.map((chat) => (
               <div
                 key={chat.id}
-                className={`chat-item ${chat.id === activeId ? 'active' : ''}`}
+                className={`chat-item ${chat.id === activeIdValue ? 'active' : ''}`}
                 onClick={() => setActiveId(chat.id)}
               >
                 <div className="chat-avatar"><Building2 size={19} /></div>
@@ -49,40 +77,44 @@ export const MessagesPage = () => {
         </div>
 
         <div className="chat-window">
-          <div className="chat-header">
-            <button className="icon-btn" style={{ width: 34, height: 34 }} onClick={() => window.history.back()}>
-              <ChevronLeft size={17} />
-            </button>
-            <div className="chat-avatar" style={{ width: 36, height: 36 }}><Building2 size={17} /></div>
-            <div>
-              <h3>{active?.name}</h3>
-            </div>
-            <span className="status-dot" style={{ marginLeft: 'auto' }} />
-          </div>
-
-          <div className="chat-messages">
-            {active?.messages.map((m, i) => (
-              <div key={i} className={`msg ${m.from}`}>
-                {m.text}
-                <span className="msg-time">{m.time}</span>
+          {active && (
+            <>
+              <div className="chat-header">
+                <button className="icon-btn" style={{ width: 34, height: 34 }} onClick={() => window.history.back()}>
+                  <ChevronLeft size={17} />
+                </button>
+                <div className="chat-avatar" style={{ width: 36, height: 36 }}><Building2 size={17} /></div>
+                <div>
+                  <h3>{active.name}</h3>
+                </div>
+                <span className="status-dot" style={{ marginLeft: 'auto' }} />
               </div>
-            ))}
-          </div>
 
-          <div className="chat-input">
-            <input
-              className="input"
-              placeholder="Написать сообщение..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') send()
-              }}
-            />
-            <button className="send-btn" onClick={send} aria-label="Отправить">
-              <Send size={18} />
-            </button>
-          </div>
+              <div className="chat-messages">
+                {active.messages.map((m, i) => (
+                  <div key={i} className={`msg ${m.from}`}>
+                    {m.text}
+                    <span className="msg-time">{m.time}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="chat-input">
+                <input
+                  className="input"
+                  placeholder="Написать сообщение..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') send()
+                  }}
+                />
+                <button className="send-btn" onClick={send} aria-label="Отправить">
+                  <Send size={18} />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </VolunteerLayout>

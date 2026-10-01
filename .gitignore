@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Backend
+backend/target
+backend/*.log
+
+# Local tooling (Maven, etc.)
+.tools/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

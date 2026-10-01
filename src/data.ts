@@ -14,6 +14,8 @@ export interface Task {
   emoji: string
   gradient: string
   organizer: string
+  /** заполнено бэкендом: откликнулся ли текущий пользователь */
+  responded?: boolean
 }
 
 export const tasks: Task[] = [

@@ -2,20 +2,23 @@ import { useState } from 'react'
 import { Star, Download } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
 import {
-  adminTasks,
-  foundations,
-  volunteers,
+  api,
+  useApi,
   type AdminTaskRow,
+  type AdminTaskStatus,
+  type AuthUser,
   type FoundationRow,
-} from '../data'
+  type FoundationStatus,
+  type VolunteerRow,
+} from '../lib/api'
 
-const taskStatusMap: Record<AdminTaskRow['status'], { label: string; cls: string }> = {
+const taskStatusMap: Record<AdminTaskStatus, { label: string; cls: string }> = {
   moderation: { label: 'На модерации', cls: 'badge-yellow' },
   published: { label: 'Опубликовано', cls: 'badge-green' },
   rework: { label: 'На доработке', cls: 'badge-red' },
 }
 
-const foundationStatusMap: Record<FoundationRow['status'], { label: string; cls: string }> = {
+const foundationStatusMap: Record<FoundationStatus, { label: string; cls: string }> = {
   pending: { label: 'На проверке', cls: 'badge-yellow' },
   approved: { label: 'Одобрено', cls: 'badge-green' },
   rejected: { label: 'Отклонено', cls: 'badge-red' },
@@ -25,25 +28,38 @@ type Tab = 'tasks' | 'foundations' | 'volunteers' | 'stats'
 
 export const AdminPage = () => {
   const [tab, setTab] = useState<Tab>('tasks')
-  const [tasksState, setTasksState] = useState<AdminTaskRow[]>(adminTasks)
-  const [foundationsState, setFoundationsState] = useState<FoundationRow[]>(foundations)
+  const { data: tasksData, reload: reloadTasks } = useApi<AdminTaskRow[]>('/admin/tasks')
+  const { data: foundationsData, reload: reloadFoundations } = useApi<FoundationRow[]>('/admin/foundations')
+  const { data: volunteersData } = useApi<VolunteerRow[]>('/admin/volunteers')
+  const { data: profile } = useApi<AuthUser>('/profile')
 
-  const publish = (id: number) =>
-    setTasksState((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'published' } : t)))
+  const tasks = tasksData ?? []
+  const foundations = foundationsData ?? []
+  const volunteers = volunteersData ?? []
 
-  const returnRework = (id: number) =>
-    setTasksState((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'rework' } : t)))
+  const setTaskStatus = async (id: number, status: AdminTaskStatus) => {
+    await api<AdminTaskRow>(`/admin/tasks/${id}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    })
+    reloadTasks()
+  }
 
-  const decideFoundation = (id: number, status: FoundationRow['status']) =>
-    setFoundationsState((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f)))
+  const setFoundationStatus = async (id: number, status: FoundationStatus) => {
+    await api<FoundationRow>(`/admin/foundations/${id}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    })
+    reloadFoundations()
+  }
 
   const downloadCsv = () => {
     const rows = [
       ['ID', 'Задание', 'Фонд', 'Статус'],
-      ...tasksState.map((t) => [String(t.id), t.title, t.foundation, taskStatusMap[t.status].label]),
+      ...tasks.map((t) => [String(t.id), t.title, t.foundation, taskStatusMap[t.status].label]),
     ]
     const csv = rows.map((r) => r.join(';')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -60,7 +76,7 @@ export const AdminPage = () => {
           <p>Общее количество начисленных часов</p>
         </div>
         <span className="hours-num">
-          48 <Star size={30} fill="currentColor" strokeWidth={0} />
+          {profile?.hours ?? '…'} <Star size={30} fill="currentColor" strokeWidth={0} />
         </span>
       </div>
 
@@ -95,7 +111,7 @@ export const AdminPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {tasksState.map((t) => (
+                {tasks.map((t) => (
                   <tr key={t.id}>
                     <td className="id">#{t.id}</td>
                     <td className="title-cell">{t.title}</td>
@@ -108,10 +124,10 @@ export const AdminPage = () => {
                     <td>
                       {t.status === 'moderation' && (
                         <div className="row-actions">
-                          <button className="mini-btn btn-success" onClick={() => publish(t.id)}>
+                          <button className="mini-btn btn-success" onClick={() => setTaskStatus(t.id, 'published')}>
                             Опубликовать
                           </button>
-                          <button className="mini-btn btn-danger" onClick={() => returnRework(t.id)}>
+                          <button className="mini-btn btn-danger" onClick={() => setTaskStatus(t.id, 'rework')}>
                             Вернуть на доработку
                           </button>
                         </div>
@@ -144,7 +160,7 @@ export const AdminPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {foundationsState.map((f) => (
+                {foundations.map((f) => (
                   <tr key={f.id}>
                     <td className="id">#{f.id}</td>
                     <td className="title-cell">{f.name}</td>
@@ -157,10 +173,10 @@ export const AdminPage = () => {
                     <td>
                       {f.status === 'pending' && (
                         <div className="row-actions">
-                          <button className="mini-btn btn-success" onClick={() => decideFoundation(f.id, 'approved')}>
+                          <button className="mini-btn btn-success" onClick={() => setFoundationStatus(f.id, 'approved')}>
                             Одобрить
                           </button>
-                          <button className="mini-btn btn-danger" onClick={() => decideFoundation(f.id, 'rejected')}>
+                          <button className="mini-btn btn-danger" onClick={() => setFoundationStatus(f.id, 'rejected')}>
                             Отклонить
                           </button>
                         </div>
@@ -207,7 +223,7 @@ export const AdminPage = () => {
         {tab === 'stats' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              {tasksState.map((t) => (
+              {tasks.map((t) => (
                 <div key={t.id} className="an-card" style={{ flex: 1, minWidth: 200 }}>
                   <div className="label">#{t.id} {t.title}</div>
                   <div className="num">{t.foundation}</div>

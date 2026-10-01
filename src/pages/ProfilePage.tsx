@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { Star, PawPrint, Baby } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
+import { useApi, type AuthUser } from '../lib/api'
 
-const info = [
-  { k: 'Имя', v: 'Алексей Иванов' },
-  { k: 'Email', v: 'alexey@mail.ru' },
-  { k: 'Телефон', v: '+7 999 123-45-67' },
-  { k: 'Город', v: 'Москва' },
-  { k: 'Дата регистрации', v: '12.04.2025' },
-]
+const roleLabels: Record<string, string> = {
+  VOLUNTEER: 'Волонтёр',
+  FOUNDATION: 'Фонд',
+  ADMIN: 'Администратор',
+}
 
 const achievements = [
   { icon: Star, bg: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)', title: 'Активный участник', desc: 'Выполнено 5 и более заданий' },
@@ -18,14 +17,31 @@ const achievements = [
 
 export const ProfilePage = () => {
   const [tab, setTab] = useState<'info' | 'achievements'>('info')
+  const { data: user, loading, error } = useApi<AuthUser>('/profile')
+
+  const name = user?.fullName ?? ''
+  const initials = name
+    .split(' ')
+    .map((w) => w[0] ?? '')
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  const info = [
+    { k: 'Имя', v: name },
+    { k: 'Email', v: user?.email ?? '' },
+    { k: 'Телефон', v: user?.phone || '—' },
+    { k: 'Город', v: user?.city || '—' },
+    { k: 'Дата регистрации', v: user?.registeredAt ?? '' },
+  ]
 
   return (
     <VolunteerLayout>
       <div className="profile-head">
-        <span className="avatar">АИ</span>
+        <span className="avatar">{initials || '—'}</span>
         <div>
-          <h1>Алексей Иванов</h1>
-          <p>Волонтёр</p>
+          <h1>{name || (loading ? 'Загрузка…' : 'Профиль')}</h1>
+          <p>{user ? roleLabels[user.role] ?? user.role : ''}</p>
         </div>
       </div>
 
@@ -40,6 +56,7 @@ export const ProfilePage = () => {
 
       {tab === 'info' ? (
         <div className="info-table">
+          {error && <div className="empty-state">Не удалось загрузить профиль: {error}</div>}
           {info.map((row) => (
             <div className="info-row-item" key={row.k}>
               <span className="k">{row.k}</span>

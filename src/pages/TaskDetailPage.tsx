@@ -2,14 +2,48 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, MapPin, CheckCircle2 } from 'lucide-react'
 import { VolunteerLayout } from '../components/VolunteerLayout'
-import { tasks } from '../data'
+import type { Task } from '../data'
 import { TaskPhoto } from '../lib/taskVisuals'
+import { api, useApi } from '../lib/api'
 
 export const TaskDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const task = tasks.find((t) => t.id === Number(id)) ?? tasks[0]
-  const [responded, setResponded] = useState(false)
+  const { data: task, loading, error, reload } = useApi<Task>(`/tasks/${id ?? '0'}`)
+  const [busy, setBusy] = useState(false)
+
+  const toggleRespond = async () => {
+    if (!task || busy) return
+    setBusy(true)
+    try {
+      await api<Task>(`/tasks/${task.id}/respond`, { method: task.responded ? 'DELETE' : 'POST' })
+      reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Не удалось выполнить действие')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <VolunteerLayout>
+        <p style={{ color: 'var(--muted)' }}>Загрузка задания…</p>
+      </VolunteerLayout>
+    )
+  }
+
+  if (error || !task) {
+    return (
+      <VolunteerLayout>
+        <button className="back-link" onClick={() => navigate('/tasks')}>
+          <ArrowLeft size={16} />
+          Назад к списку
+        </button>
+        <p style={{ color: 'var(--muted)' }}>Задание не найдено{error ? `: ${error}` : ''}</p>
+      </VolunteerLayout>
+    )
+  }
 
   return (
     <VolunteerLayout>
@@ -65,13 +99,14 @@ export const TaskDetailPage = () => {
         <aside className="detail-aside">
           <TaskPhoto taskId={task.id} gradient={task.gradient} size={56} className="detail-photo" />
           <div className="detail-aside-body">
-            <div className="slots-line">{task.slots} волонтёров</div>
+            <div className="slots-line">{task.responses} волонтёров</div>
             <div className="slots-sub">уже откликнулись</div>
             <button
-              className={`btn ${responded ? 'btn-success' : 'btn-primary'}`}
-              onClick={() => setResponded((v) => !v)}
+              className={`btn ${task.responded ? 'btn-success' : 'btn-primary'}`}
+              onClick={toggleRespond}
+              disabled={busy}
             >
-              {responded ? 'Отменить отклик' : 'Откликнуться'}
+              {task.responded ? 'Отменить отклик' : 'Откликнуться'}
             </button>
           </div>
         </aside>
