@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { Logo } from '../components/Logo'
 import { login } from '../lib/api'
+import { roleDefaultPath } from '../components/ProtectedRoute'
 
 export const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -18,7 +19,7 @@ export const LoginPage = () => {
     setBusy(true)
     try {
       const user = await login(email, password)
-      navigate(user.role === 'VOLUNTEER' ? '/dashboard' : '/admin')
+      navigate(roleDefaultPath(user.role), { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось войти')
     } finally {

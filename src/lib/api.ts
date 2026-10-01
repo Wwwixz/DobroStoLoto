@@ -3,6 +3,16 @@ import type { Chat, MyResponse, Task } from '../data'
 
 export type Role = 'VOLUNTEER' | 'FOUNDATION' | 'ADMIN'
 
+export const ROLE_DEFAULT_PATH: Record<Role, string> = {
+  VOLUNTEER: '/dashboard',
+  FOUNDATION: '/fund',
+  ADMIN: '/admin',
+}
+
+export function roleDefaultPath(role: Role): string {
+  return ROLE_DEFAULT_PATH[role] ?? '/dashboard'
+}
+
 /** Пользователь, возвращаемый /api/auth/* и /api/profile. */
 export interface AuthUser {
   id: number
@@ -25,9 +35,12 @@ export interface HistoryEntry {
 }
 
 export interface AnalyticsStats {
-  volunteers: number
+  volunteers?: number
+  foundations?: number
   completedTasks: number
   hours: number
+  publishedTasks?: number
+  totalResponses?: number
 }
 
 export interface Analytics {
@@ -80,6 +93,10 @@ export function getStoredUser(): AuthUser | null {
 export function setStoredUser(user: AuthUser | null) {
   if (user) localStorage.setItem(USER_KEY, JSON.stringify(user))
   else localStorage.removeItem(USER_KEY)
+}
+
+export function logout() {
+  setStoredUser(null)
 }
 
 function userHeader(): Record<string, string> {

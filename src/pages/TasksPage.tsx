@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import { TaskCard } from '../components/TaskCard'
 import type { Task } from '../data'
 import { useApi } from '../lib/api'
@@ -26,7 +25,7 @@ export const TasksPage = () => {
   })
 
   return (
-    <VolunteerLayout>
+    <>
       <h1 className="page-title">Задания</h1>
 
       <div className="tasks-controls">
@@ -65,6 +64,6 @@ export const TasksPage = () => {
           !error && filtered.map((task) => <TaskCard key={task.id} task={task} />)
         )}
       </div>
-    </VolunteerLayout>
+    </>
   )
 }

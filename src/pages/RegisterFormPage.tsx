@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Building2, User } from 'lucide-react'
 import { Logo } from '../components/Logo'
 import { register, type Role } from '../lib/api'
+import { roleDefaultPath } from '../components/ProtectedRoute'
 
 const ROLE_BY_PATH: Record<string, { role: Role; icon: typeof User; title: string }> = {
   volunteer: { role: 'VOLUNTEER', icon: User, title: 'Волонтёр' },
@@ -34,7 +35,7 @@ export const RegisterFormPage = () => {
     setBusy(true)
     try {
       const user = await register({ role, fullName, email, phone, password })
-      navigate(user.role === 'VOLUNTEER' ? '/dashboard' : '/admin')
+      navigate(roleDefaultPath(user.role), { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось зарегистрироваться')
     } finally {

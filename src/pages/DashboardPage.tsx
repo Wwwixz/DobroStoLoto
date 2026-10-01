@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { Users2, Heart } from 'lucide-react'
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import type { Task } from '../data'
 import { TaskPhoto } from '../lib/taskVisuals'
 import { getStoredUser, useApi } from '../lib/api'
@@ -13,7 +12,7 @@ export const DashboardPage = () => {
   const popular = (tasks ?? []).slice(0, 3)
 
   return (
-    <VolunteerLayout>
+    <>
       <div className="welcome">
         <h1>Привет, {firstName}! 👋</h1>
         <p>Рады, что ты с нами!</p>
@@ -44,6 +43,6 @@ export const DashboardPage = () => {
           </Link>
         ))}
       </div>
-    </VolunteerLayout>
+    </>
   )
 }

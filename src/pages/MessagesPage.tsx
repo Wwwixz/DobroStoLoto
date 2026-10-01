@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Send, ChevronLeft, Building2 } from 'lucide-react'
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import type { Chat } from '../data'
 import { api } from '../lib/api'
 
@@ -24,12 +23,12 @@ export const MessagesPage = () => {
   }, [])
 
   const list = chats ?? []
-  const activeIdValue = activeId ?? list[0]?.id ?? null
-  const active = list.find((c) => c.id === activeIdValue)
+  const activeIdValue = activeId
+  const active = activeIdValue !== null ? list.find((c) => c.id === activeIdValue) ?? null : null
 
   const send = async () => {
     const value = text.trim()
-    if (!value || !activeIdValue) return
+    if (!value || activeIdValue === null) return
     try {
       const updated = await api<Chat>(`/chats/${activeIdValue}/messages`, {
         method: 'POST',
@@ -44,15 +43,15 @@ export const MessagesPage = () => {
 
   if (chats === null) {
     return (
-      <VolunteerLayout>
+      <>
         <h1 className="page-title" style={{ marginBottom: 16 }}>Сообщения</h1>
         <p style={{ color: 'var(--muted)' }}>Загрузка диалогов…</p>
-      </VolunteerLayout>
+      </>
     )
   }
 
   return (
-    <VolunteerLayout>
+    <>
       <h1 className="page-title" style={{ marginBottom: 16 }}>Сообщения</h1>
 
       <div className="messages-layout">
@@ -77,10 +76,10 @@ export const MessagesPage = () => {
         </div>
 
         <div className="chat-window">
-          {active && (
+          {active ? (
             <>
               <div className="chat-header">
-                <button className="icon-btn" style={{ width: 34, height: 34 }} onClick={() => window.history.back()}>
+                <button className="icon-btn" style={{ width: 34, height: 34 }} onClick={() => setActiveId(null)}>
                   <ChevronLeft size={17} />
                 </button>
                 <div className="chat-avatar" style={{ width: 36, height: 36 }}><Building2 size={17} /></div>
@@ -114,9 +113,28 @@ export const MessagesPage = () => {
                 </button>
               </div>
             </>
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#fff',
+                borderRadius: 16,
+                color: 'var(--muted)',
+                padding: 24,
+                textAlign: 'center',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: '0 0 8px', color: 'var(--text)' }}>Выберите диалог</h3>
+                <p style={{ margin: 0 }}>Чтобы начать общение — выберите собеседника из списка слева</p>
+              </div>
+            </div>
           )}
         </div>
       </div>
-    </VolunteerLayout>
+    </>
   )
 }

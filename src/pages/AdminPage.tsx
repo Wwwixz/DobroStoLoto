@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Star, Download } from 'lucide-react'
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import {
   api,
   useApi,
@@ -69,7 +68,7 @@ export const AdminPage = () => {
   }
 
   return (
-    <VolunteerLayout role="Администратор">
+    <>
       <div className="hours-card">
         <div>
           <h3>Мои волонтёрские часы</h3>
@@ -240,6 +239,6 @@ export const AdminPage = () => {
           </div>
         )}
       </div>
-    </VolunteerLayout>
+    </>
   )
 }

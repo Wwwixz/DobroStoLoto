@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Star, PawPrint, Baby } from 'lucide-react'
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import { useApi, type AuthUser } from '../lib/api'
 
 const roleLabels: Record<string, string> = {
@@ -36,7 +35,7 @@ export const ProfilePage = () => {
   ]
 
   return (
-    <VolunteerLayout>
+    <>
       <div className="profile-head">
         <span className="avatar">{initials || '—'}</span>
         <div>
@@ -79,6 +78,6 @@ export const ProfilePage = () => {
           ))}
         </div>
       )}
-    </VolunteerLayout>
+    </>
   )
 }

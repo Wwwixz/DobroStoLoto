@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, MapPin, CheckCircle2 } from 'lucide-react'
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import type { Task } from '../data'
 import { TaskPhoto } from '../lib/taskVisuals'
 import { api, useApi } from '../lib/api'
@@ -27,26 +26,26 @@ export const TaskDetailPage = () => {
 
   if (loading) {
     return (
-      <VolunteerLayout>
+      <>
         <p style={{ color: 'var(--muted)' }}>Загрузка задания…</p>
-      </VolunteerLayout>
+      </>
     )
   }
 
   if (error || !task) {
     return (
-      <VolunteerLayout>
+      <>
         <button className="back-link" onClick={() => navigate('/tasks')}>
           <ArrowLeft size={16} />
           Назад к списку
         </button>
         <p style={{ color: 'var(--muted)' }}>Задание не найдено{error ? `: ${error}` : ''}</p>
-      </VolunteerLayout>
+      </>
     )
   }
 
   return (
-    <VolunteerLayout>
+    <>
       <button className="back-link" onClick={() => navigate('/tasks')}>
         <ArrowLeft size={16} />
         Назад к списку
@@ -111,6 +110,6 @@ export const TaskDetailPage = () => {
           </div>
         </aside>
       </div>
-    </VolunteerLayout>
+    </>
   )
 }

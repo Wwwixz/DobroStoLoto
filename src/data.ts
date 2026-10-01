@@ -199,9 +199,14 @@ export const chats: Chat[] = [
 ]
 
 export interface MyResponse {
+  id?: number
   taskId: number
   taskTitle: string
   foundation: string
+  volunteerId?: number
+  volunteerName?: string
+  volunteerEmail?: string
+  volunteerPhone?: string
   status: 'pending' | 'approved' | 'rejected'
   date: string
 }

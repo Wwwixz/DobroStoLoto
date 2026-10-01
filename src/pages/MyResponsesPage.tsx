@@ -1,4 +1,3 @@
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import type { MyResponse } from '../data'
 import { TaskPhoto } from '../lib/taskVisuals'
 import { useApi } from '../lib/api'
@@ -13,7 +12,7 @@ export const MyResponsesPage = () => {
   const { data, loading, error } = useApi<MyResponse[]>('/responses')
 
   return (
-    <VolunteerLayout>
+    <>
       <h1 className="page-title">Мои отклики</h1>
       <p className="page-sub">Статусы ваших текущих откликов на задания</p>
 
@@ -40,6 +39,6 @@ export const MyResponsesPage = () => {
           <div className="empty-state">У вас пока нет откликов. Найдите задание на странице «Задания».</div>
         )}
       </div>
-    </VolunteerLayout>
+    </>
   )
 }

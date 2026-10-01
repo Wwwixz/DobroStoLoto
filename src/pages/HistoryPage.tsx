@@ -1,4 +1,3 @@
-import { VolunteerLayout } from '../components/VolunteerLayout'
 import { TaskPhoto } from '../lib/taskVisuals'
 import { useApi, type HistoryEntry } from '../lib/api'
 
@@ -6,7 +5,7 @@ export const HistoryPage = () => {
   const { data, loading, error } = useApi<HistoryEntry[]>('/history')
 
   return (
-    <VolunteerLayout>
+    <>
       <h1 className="page-title">История</h1>
       <p className="page-sub">Выполненные вами задания</p>
 
@@ -30,6 +29,6 @@ export const HistoryPage = () => {
           <div className="empty-state">Пока нет выполненных заданий.</div>
         )}
       </div>
-    </VolunteerLayout>
+    </>
   )
 }
